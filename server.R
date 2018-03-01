@@ -9,8 +9,11 @@ server <- function(input, output, session) {
                    shiny_access_token = analyticsAccessToken())
     })
 
-    observeEvent(input$fullScreenToggle, {
-        toggle("sidebar")
+    observeEvent(input$adwordsFullScreenToggle, {
+        toggle("adwordsSidebar")
     })
 
+    observeEvent(input$gaFullScreenToggle, {
+        toggle("gaSidebar")
+    })
 }
