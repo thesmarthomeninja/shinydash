@@ -1,18 +1,23 @@
 source('global.R')
 ui <- fluidPage(
+    useShinyjs(),
+    theme = "bootstrap.css",
 
-    titlePanel("Hello Shiny!"),
+    navbarPage("W O L F",
+               tabPanel("Home"),
+               tabPanel("Google AdWords",
+                        actionButton("fullScreenToggle", "", icon=icon("compress")),
+                        sidebarLayout(
+                            sidebarPanel(id="sidebar"),
+                            mainPanel(
+                                img(src="exampleimg.jpg")
+                            )
+                        )),
+               tabPanel("Google Analytics"),
+               tabPanel("Facebook Ads"),
+               tabPanel("Twitter Ads"),
+               tabPanel("LinkedIn Ads"),
+               tabPanel("Moz")
+               )
 
-    sidebarLayout(
-
-        sidebarPanel(
-
-            googleAuthUI("auth1")
-
-        ),
-
-        mainPanel(
-            tableOutput("something")
-        )
-    )
 )

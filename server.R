@@ -1,26 +1,16 @@
+source('global.R')
 server <- function(input, output, session) {
 
-    access_token  <- callModule(googleAuth, "auth1")
+    analyticsAccessToken  <- callModule(googleAuth, "gaLogin")
+    adwordsAccessToken <- doAuth()
 
-    gadata <- reactive({
-
-        with_shiny(google_analytics,
-                   "62546110",
-                   date_range=c("2018-01-01", "2018-01-22"),
-                   metrics = c("sessions", "bounceRate"),
-                   dimensions = c("source", "medium"),
-                   shiny_access_token = access_token())
+    account_list <- reactive({
+        with_shiny(ga_account_list,
+                   shiny_access_token = analyticsAccessToken())
     })
 
-
-    output$something <- renderTable({
-
-        req(access_token())
-
-        gadata <- gadata()
-
-        gadata
-
+    observeEvent(input$fullScreenToggle, {
+        toggle("sidebar")
     })
 
 }
