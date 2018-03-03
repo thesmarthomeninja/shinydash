@@ -5,7 +5,9 @@ server <- function(input, output, session) {
     adwordsAccessToken <- doAuth()
 
     account_list <- reactive({
-        req(analyticsAccessToken())
+        validate(
+            need(analyticsAccessToken(), "Please log in to see settings")
+        )
         with_shiny(ga_account_list,
                    shiny_access_token = analyticsAccessToken())
     })
