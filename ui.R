@@ -10,25 +10,40 @@ ui <- fluidPage(
                         ),
                navbarMenu("Google AdWords",
                           tabPanel("Campaign Performance",
-                                   actionButton("adwordsFullScreenToggle", "", icon=icon("compress")),
                                    sidebarLayout(
-                                       sidebarPanel(id="adwordsSidebar",
-                                                    textInput("adwordsAccountId", "Account ID",
-                                                              placeholder = "XXX-XXX-XXXX",
-                                                              width = "35%"),
-                                                    dateRangeInput("adwordsDateRange","Date Range"),
-                                                    selectInput("gaAnalysis", "Choose Analysis",
-                                                                choices=c("Scatterplot", "Corplot")),
-                                                    actionButton("getAdWordsData", "Plot Data")
-                                                    ),
-                                       mainPanel(
-                                           img(src="exampleimg.jpg")
-                                       )
+                                       sidebarPanel(actionButton("plotCampaignPerformance", "Plot Data")),
+                                       mainPanel(plotlyOutput("campaignPerformancePlot"))
                                    )
                                    ),
-                          tabPanel("Correlation Plot"),
-                          tabPanel("Ad Scheduling"),
-                          tabPanel("N-Grams"),
+                          tabPanel("Correlation Plot",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotCorrelationMatrix", "Plot Data")),
+                                       mainPanel(plotOutput("corrplot"))
+                                   )
+                                   ),
+                          tabPanel("Ad Scheduling",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotAdScheduling", "Plot Data")),
+                                       mainPanel(
+                                           tabsetPanel(
+                                               tabPanel("Impressions", plotOutput("impressionHeatMap")),
+                                               tabPanel("Impression Share", plotOutput("isHeatMap")),
+                                               tabPanel("Conversions", plotOutput("conversionHeatMap")),
+                                               tabPanel("CPA", plotOutput("cpaHeatMap"))
+                                           ))
+                                   )
+                                   ),
+                          tabPanel("N-Grams",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotnGrams", "Plot Data")),
+                                       mainPanel(
+                                           tabsetPanel(
+                                               tabPanel("Unigrams", tableOutput("unigrams")),
+                                               tabPanel("Bigrams", tableOutput("bigrams")),
+                                               tabPanel("Trigrams", tableOutput("trigrams"))
+                                           ))
+                                   )
+                                   ),
                           tabPanel("Impression Share"),
                           tabPanel("Pacing vs Targets"),
                           tabPanel("Device Performance"),
@@ -43,7 +58,6 @@ ui <- fluidPage(
                           tabPanel("")),
                navbarMenu("Google Analytics",
                           tabPanel("Yesterday's Overview",
-                                   actionButton("gaFullScreenToggle", "", icon=icon("compress")),
                                    sidebarLayout(
                                        sidebarPanel(id="gaSidebar",
                                                     dateRangeInput("adwordsDateRange","Date Range"),
