@@ -38,16 +38,39 @@ ui <- fluidPage(
                                        sidebarPanel(actionButton("plotnGrams", "Plot Data")),
                                        mainPanel(
                                            tabsetPanel(
-                                               tabPanel("Unigrams", tableOutput("unigrams")),
-                                               tabPanel("Bigrams", tableOutput("bigrams")),
-                                               tabPanel("Trigrams", tableOutput("trigrams"))
+                                               tabPanel("Unigrams", plotOutput("unigrams")),
+                                               tabPanel("Bigrams", plotOutput("bigrams")),
+                                               tabPanel("Trigrams", plotOutput("trigrams"))
                                            ))
                                    )
                                    ),
-                          tabPanel("Impression Share"),
-                          tabPanel("Pacing vs Targets"),
-                          tabPanel("Device Performance"),
-                          tabPanel("Quality Score"),
+                          tabPanel("Impression Share",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotImpressionShare", "Plot Data")),
+                                       mainPanel(
+                                           plotOutput("isPlot"),
+                                           plotOutput("isOtherPlot"))
+                                   )
+                                   ),
+                          tabPanel("Device Performance",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotDevicePerformance", "Plot Data")),
+                                       mainPanel(plotOutput("devicePlot"))
+                                   )
+                                   ),
+                          tabPanel("Quality Score",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotQs", "Plot Data")),
+                                       mainPanel(
+                                           tabsetPanel(
+                                               tabPanel("Ad Relevance", tableOutput("adRelevance")),
+                                               tabPanel("LP Experience", tableOutput("lpExperience")),
+                                               tabPanel("Expected CTR", tableOutput("expectedCtr")),
+                                               tabPanel("Quality Score", tableOutput("qualityScore")),
+                                               tabPanel("Weighted QS", plotlyOutput("weightedQs"))
+                                           ))
+                                   )
+                                   ),
                           tabPanel("Match Types"),
                           tabPanel("Ad-Keyword Combinations"),
                           tabPanel("Performance Segments"),
