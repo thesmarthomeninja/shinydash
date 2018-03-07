@@ -36,4 +36,4 @@ vignettes/*.pdf
 global.R*
 
 .gitignore
-.google.auth.RData
+.google.auth.RData.google.auth.RData

@@ -71,14 +71,49 @@ ui <- fluidPage(
                                            ))
                                    )
                                    ),
-                          tabPanel("Match Types"),
-                          tabPanel("Ad-Keyword Combinations"),
-                          tabPanel("Performance Segments"),
-                          tabPanel("Anomaly Detection"),
-                          tabPanel("Google Trends"),
-                          tabPanel("Treemaps"),
-                          tabPanel("Geoperformance"),
-                          tabPanel("")),
+                          tabPanel("Match Types",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotMatchTypes", "Plot Data")),
+                                       mainPanel(plotOutput("matchTypesPlot"))
+                                   )
+                                   ),
+                          tabPanel("Ad-Keyword Combinations",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotAdKeywords", "Plot Data")),
+                                       mainPanel(plotlyOutput("adKeywordsPlot"))
+                                   )
+                                   ),
+                          tabPanel("Performance Segments",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotPerformanceSegments", "Plot Data")),
+                                       mainPanel(
+                                           tabsetPanel(
+                                               tabPanel("Converters", plotlyOutput("convertersPlot")),
+                                               tabPanel("Non-Converters", plotlyOutput("nonConvertersPlot")),
+                                               tabPanel("Clickless", plotlyOutput("clicklessPlot"))
+                                           ))
+                                   )
+                                   ),
+                          tabPanel("Anomaly Detection",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotAnomalyDetection", "Plot Data")),
+                                       mainPanel(
+                                           tabsetPanel(
+                                               tabPanel("Clicks", plotOutput("clickAnomalies")),
+                                               tabPanel("Conversions", plotOutput("conversionAnomalies")),
+                                               tabPanel("CPA", plotOutput("cpaAnomalies")),
+                                               tabPanel("CPC", plotOutput("cpcAnomalies")),
+                                               tabPanel("IS", plotOutput("isAnomalies")),
+                                               tabPanel("Position", plotOutput("positionAnomalies"))
+                                           ))
+                                   )
+                                   ),
+                          tabPanel("Treemaps",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotTreemaps", "Plot Data")),
+                                       mainPanel(plotOutput("treemapsPlot"))
+                                   )
+                                   )),
                navbarMenu("Google Analytics",
                           tabPanel("Yesterday's Overview",
                                    sidebarLayout(

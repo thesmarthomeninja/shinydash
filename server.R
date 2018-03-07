@@ -409,9 +409,181 @@ server <- function(input, output, session) {
         })
 
         plotData <- qualityScoreAnalysis %>% mutate(QSImpr = as.numeric(QS) * Impressions) %>% group_by(Campaign, AdGroup) %>%
-            summarise(QSImpr = sum(QSImpr), Impressions = sum(Impressions)) %>% ungroup() %>% mutate(weightedQS = QSImpr/Impressions)
+            summarise(QSImpr = sum(QSImpr), Impressions = sum(Impressions)) %>% ungroup() %>% mutate(weightedQS = QSImpr/Impressions) %>%
+            filter(Impressions > 10)
 
         plot <- plotData %>% ggplot(aes(x = weightedQS, y = 1)) + geom_text(aes(label = AdGroup),position = position_jitter(0.7), size = 1.5)
-        output$weightedQs <- renderPlotly(ggplotly(plot))
+        output$weightedQs <- renderPlotly(plot)
+    })
+
+    observeEvent(input$plotMatchTypes,{
+        keywordPerformanceQuery <- statement(select=c("Date","CampaignName","AdGroupName","Criteria","KeywordMatchType",
+                                                      "Impressions","Clicks","Cost","Conversions","HasQualityScore",
+                                                      "CreativeQualityScore","PostClickQualityScore","SearchPredictedCtr",
+                                                      "AveragePosition","QualityScore","SearchImpressionShare"),
+                                             report="KEYWORDS_PERFORMANCE_REPORT",
+                                             start=input$dateRange[1],
+                                             end=input$dateRange[2])
+
+        keywordPerformance <- getData(clientCustomerId=input$adwordsAccountId, google_auth=adwordsAccessToken, statement=keywordPerformanceQuery)
+        names(keywordPerformance) <- c("Date","Campaign","AdGroup","Keyword","MatchType","Impressions","Clicks","Cost","Conversions",
+                                       "HasQualityScore","AdRelevance","LPExperience","ExpectedCTR","Position","QS","SearchIS")
+
+        matchTypePerformance <- keywordPerformance %>% group_by(Date, MatchType) %>%
+            summarize(Impressions = sum(Impressions), Clicks = sum(Clicks), Cost = sum(Cost),Conversions = sum(Conversions)) %>%
+            mutate(Ctr = Clicks/Impressions, CPC = Cost/Clicks, CPA = Cost/Conversions, ConversionRate = Conversions/Clicks)
+
+        matchTypePerformanceLong <- gather(matchTypePerformance, metric, value, Impressions:ConversionRate)
+
+        output$matchTypesPlot <- renderPlot({
+            ggplot(matchTypePerformanceLong, aes(y = value, x = Date, color = MatchType)) +
+            geom_line() +
+            facet_grid(metric ~ ., scales = "free_y") +
+                theme(legend.position = "bottom")
+        })
+    })
+
+    observeEvent(input$plotAdKeywords,{
+        adPerformanceQuery <- statement(select=c('CampaignName','AdGroupName','Id','Description','HeadlinePart2','CriterionId',
+                                                 'Cost','Conversions','CostPerConversion','Clicks'),
+                                        report="AD_PERFORMANCE_REPORT",
+                                        where="Cost > 100000000 AND AdNetworkType1 = SEARCH",
+                                        start=input$dateRange[1],
+                                        end=input$dateRange[2])
+
+        adPerformance <- getData(clientCustomerId=input$adwordsAccountId, google_auth=adwordsAccessToken, statement=adPerformanceQuery)
+        names(adPerformance) <- c("Campaign", "AdGroup", "AdId", "Description", "Headline2", "KeywordId",
+                                  "Cost", "Conversions", "CPA","Clicks")
+
+        adPerformance <- adPerformance %>% mutate(ConversionRate = Conversions/Clicks)
+
+        output$adKeywordsPlot <- renderPlotly({
+            plot_ly(data = adPerformance, x = ~ConversionRate, y = ~CPA, size = ~Conversions,
+                text = ~paste("Campaign: ", Campaign, "<br>AdGroup: ", AdGroup, "<br>Headline2: ",
+                              Headline2, "<br>Description: ", Description ,"<br>KeywordId: ", KeywordId))
+        })
+    })
+
+    observeEvent(input$plotPerformanceSegments,{
+        keywordPerformanceQuery <- statement(select=c("Date","CampaignName","AdGroupName","Criteria","KeywordMatchType",
+                                                      "Impressions","Clicks","Cost","Conversions","HasQualityScore",
+                                                      "CreativeQualityScore","PostClickQualityScore","SearchPredictedCtr",
+                                                      "AveragePosition","QualityScore","SearchImpressionShare"),
+                                             report="KEYWORDS_PERFORMANCE_REPORT",
+                                             start=input$dateRange[1],
+                                             end=input$dateRange[2])
+
+        keywordPerformance <- getData(clientCustomerId=input$adwordsAccountId, google_auth=adwordsAccessToken, statement=keywordPerformanceQuery)
+        names(keywordPerformance) <- c("Date","Campaign","AdGroup","Keyword","MatchType","Impressions","Clicks","Cost","Conversions",
+                                       "HasQualityScore","AdRelevance","LPExperience","ExpectedCTR","Position","QS","SearchIS")
+
+        performanceSegments <- keywordPerformance %>% mutate(ImpQS = Impressions * as.numeric(QS), ImpPos = Impressions * Position) %>%
+            group_by(Keyword) %>% summarise(CPA = sum(Cost)/sum(Conversions), Impressions = sum(Impressions), ImpQS = sum(ImpQS),
+                                            Cost = sum(Cost), Conversions = sum(Conversions), ImpPos = sum(ImpPos), CPC = sum(Cost)/sum(Clicks)) %>%
+            mutate(Position = ImpPos/Impressions, QS = ImpQS/Impressions)
+
+        hasConversions <- performanceSegments %>% filter(Conversions > 0)
+        output$convertersPlot <- renderPlotly({
+            plot_ly(data = hasConversions, x = ~Position, y = ~CPA, size = ~Conversions,
+                text = ~paste("Keyword: ", Keyword, "<br>Conversions: ", Conversions,
+                              "<br>CPA: ", CPA, "<br>Position: ", Position))
+        })
+
+        notConverting <- performanceSegments %>% filter(Conversions == 0, Cost > 0)
+        output$nonConvertersPlot <- renderPlotly({
+            plot_ly(data = notConverting, x = ~Position, y = ~CPC, size = ~Cost,
+                text = ~paste("Keyword: ", Keyword, "<br>Cost: ", Cost,
+                              "<br>CPC: ", CPC, "<br>Position: ", Position))
+        })
+
+        clickless <- performanceSegments %>% filter(Cost == 0, Impressions > 0)
+        output$clicklessPlot <- renderPlotly({
+            plot_ly(data = clickless, x = ~Position, y = ~QS, size = ~Impressions, type = 'scatter',
+                text = ~paste("Keyword: ", Keyword, "<br>Impressions: ", Impressions,
+                              "<br>QS: ", QS, "<br>Position: ", Position))
+        })
+    })
+
+    observeEvent(input$plotAnomalyDetection,{
+        accountPerformanceQuery <- statement(select=c("Date","DayOfWeek","HourOfDay","Device","Clicks","Impressions",
+                                                      "Conversions","Cost", "SearchImpressionShare", "AveragePosition",
+                                                      "SearchRankLostImpressionShare","SearchBudgetLostImpressionShare",
+                                                      "SearchExactMatchImpressionShare"),
+                                             report="ACCOUNT_PERFORMANCE_REPORT",
+                                             start=input$dateRange[1],
+                                             end=input$dateRange[2])
+
+        accountPerformance <- getData(clientCustomerId=input$adwordsAccountId, google_auth=adwordsAccessToken, statement=accountPerformanceQuery)
+        names(accountPerformance) <- c("Date","DayOfWeek","HourOfDay","Device","Clicks","Impressions","Conversions","Cost","SearchIS",
+                                       "AveragePosition","RankLostIS","BudgetLostIS","ExactMatchIS")
+
+        anomalyData <- accountPerformance %>%
+            mutate(DateTime = ymd_hms(paste0(Date," ",HourOfDay,":00:00")),ImpIS = Impressions * SearchIS,
+                   ImpPosition = Impressions * AveragePosition) %>%
+            group_by(DateTime, HourOfDay) %>%
+            summarise(Clicks = sum(Clicks, na.rm=TRUE), Conversions = sum(Conversions, na.rm=TRUE),
+                      CPA = sum(Cost, na.rm=TRUE)/sum(Conversions, na.rm=TRUE),
+                      CPC = sum(Cost, na.rm=TRUE)/sum(Clicks, na.rm=TRUE),
+                      ImpIS = sum(ImpIS, na.rm=TRUE), ImpPosition = sum(ImpPosition, na.rm=TRUE),
+                      Impressions = sum(Impressions, na.rm=TRUE)) %>%
+            mutate(SearchIS = ImpIS / Impressions, Position = ImpPosition / Impressions)
+
+        anomalyData <- anomalyData %>% arrange(DateTime)
+        anomalyData[!is.finite(anomalyData$CPA),"CPA"] <- 0
+        anomalyData[is.na(anomalyData$SearchIS),"SearchIS"] <- 0
+        anomalyData[is.na(anomalyData$Clicks),"Clicks"] <- 0
+        anomalyData[is.na(anomalyData$Conversions),"Conversions"] <- 0
+        anomalyData[is.na(anomalyData$CPC),"CPC"] <- 0
+        anomalyData[is.na(anomalyData$Position),"Position"] <- 0
+
+        anomClicks <- AnomalyDetectionTs(anomalyData[,c("DateTime","Clicks")], direction='both',
+                                         plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Clicks")
+        output$clickAnomalies <- renderPlot(anomClicks$plot)
+
+        anomConversions <- AnomalyDetectionTs(anomalyData[,c("DateTime","Conversions")], direction='both',
+                                              plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Conversions")
+        output$conversionAnomalies <- renderPlot(anomConversions$plot)
+
+        anomCPA <- AnomalyDetectionTs(anomalyData[,c("DateTime","CPA")], direction='both',
+                                      plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "CPA")
+        output$cpaAnomalies <- renderPlot(anomCPA$plot)
+
+        anomCPC <- AnomalyDetectionTs(anomalyData[,c("DateTime","CPC")], direction='both',
+                                      plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "CPC")
+        output$cpcAnomalies <- renderPlot(anomCPC$plot)
+
+        anomSearchIS <- AnomalyDetectionTs(anomalyData[,c("DateTime","SearchIS")], direction='both',
+                                           plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "SearchIS")
+        output$isAnomalies <- renderPlot(anomSearchIS$plot)
+
+        anomPosition <- AnomalyDetectionTs(anomalyData[,c("DateTime","Position")], direction='both',
+                                           plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Position")
+        output$positionAnomalies <- renderPlot(anomPosition$plot)
+    })
+
+    observeEvent(input$plotTreemaps,{
+        campaignPerformanceQuery <- statement(select=c("Date","CampaignName","Conversions","Cost","Clicks"),
+                                              report="CAMPAIGN_PERFORMANCE_REPORT",
+                                              start=input$dateRange[1],
+                                              end=input$dateRange[2])
+
+        campaignPerformance <- getData(clientCustomerId=input$adwordsAccountId,
+                                       google_auth=adwordsAccessToken, statement=campaignPerformanceQuery)
+        names(campaignPerformance) <- c("Date","Campaign", "Conversions", "Cost", "Clicks")
+
+        campaignPerformanceTidy <- campaignPerformance %>% group_by(Campaign) %>%
+            summarize(Cost = sum(Cost), Conversions = sum(Conversions), CPA = sum(Cost)/sum(Conversions),
+                      Clicks = sum(Clicks), ConversionRate = sum(Conversions)/sum(Clicks))
+
+        campaignPerformanceTidy[!is.finite(campaignPerformanceTidy$CPA),"CPA"] <- 0
+
+        output$treemapsPlot <- renderPlot({
+            treemap(campaignPerformanceTidy,
+                index="Campaign",
+                vSize = "Cost",
+                vColor = "CPA",
+                palette = "RdYlBu",
+                type="value")
+        })
     })
 }
