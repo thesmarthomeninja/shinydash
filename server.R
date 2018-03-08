@@ -586,4 +586,24 @@ server <- function(input, output, session) {
                 type="value")
         })
     })
+
+    observeEvent(input$plotAudiencePerformance,{
+        audiencePerformanceQuery <- statement(select = c( "UserListName", "Criteria", "AveragePosition", "Clicks",
+                                                    "Conversions", "Cost", "Impressions" ),
+                          report = "AUDIENCE_PERFORMANCE_REPORT",
+                          start=input$dateRange[1],
+                          end=input$dateRange[2])
+
+        audiencePerformance <- getData(clientCustomerId=input$adwordsAccountId, google_auth=adwordsAccessToken, statement=audiencePerformanceQuery)
+
+        tidyAudiencePerformance <- audiencePerformance %>% mutate(impPosition = Impressions * Position) %>%
+            group_by(Userlistname, Audience) %>%
+            summarise(Clicks = sum(Clicks), Impressions=sum(Impressions), Cost = sum(Cost),
+                      Conversions = sum(Conversions), impPosition = sum(impPosition)) %>%
+            mutate(CTR = Clicks/Impressions, AvgCpc = Cost/Clicks, AvgPosition = impPosition/Impressions,
+                   CPA = Cost/Conversions, ConversionRate = Conversions/Clicks) %>%
+            select(-impPosition)
+
+        output$audiencePerformanceTable <- renderTable(tidyAudiencePerformance)
+    })
 }
