@@ -606,4 +606,30 @@ server <- function(input, output, session) {
 
         output$audiencePerformanceTable <- renderTable(tidyAudiencePerformance)
     })
+
+    observeEvent(input$plotDeviceSchedulePerformance,{
+        deviceScheduleQuery <- statement(select = c("Device", "DayOfWeek", "HourOfDay", "AveragePosition", "Clicks", "Conversions",
+                                                    "Cost", "Impressions", "Ctr", "AverageCpc", "CostPerConversion", "ConversionRate",
+                                                    "SearchImpressionShare"),
+                                         report = "ACCOUNT_PERFORMANCE_REPORT",
+                                         start=input$dateRange[1],
+                                         end=input$dateRange[2])
+
+        deviceSchedulePerformance <- getData(clientCustomerId=input$adwordsAccountId, google_auth=adwordsAccessToken,
+                                             statement=deviceScheduleQuery)
+        names(deviceSchedulePerformance) <- c("Device","DayOfWeek","HourOfDay","Position","Clicks","Conversions",
+                                              "Cost","Impressions","Ctr","CPC","CPA","CR","IS")
+
+        tidyDeviceSchedule <- gather(deviceSchedulePerformance, metric, value, Position:IS)
+
+        tidyDeviceSchedule$DayOfWeek<- factor(tidyDeviceSchedule$DayOfWeek,c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))
+        tidyDeviceSchedule$metric<- factor(tidyDeviceSchedule$metric,c("Clicks","Impressions","Ctr","CPC","Cost","Position","Conversions",
+                                                                       "CPA","CR","IS"))
+
+        output$deviceSchedulePerformancePlot <- renderPlot({
+            ggplot(tidyDeviceSchedule, aes(x=as.numeric(HourOfDay), y=value, color=Device)) +
+                geom_line() +
+                facet_grid(metric~DayOfWeek, scales = "free_y")
+        })
+    })
 }

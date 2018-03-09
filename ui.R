@@ -119,6 +119,12 @@ ui <- fluidPage(
                                        sidebarPanel(actionButton("plotAudiencePerformance", "Plot Data")),
                                        mainPanel(tableOutput("audiencePerformanceTable"))
                                    )
+                                   ),
+                          tabPanel("Device-Schedule",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotDeviceSchedulePerformance", "Plot Data")),
+                                       mainPanel(plotOutput("deviceSchedulePerformancePlot"))
+                                   )
                                    )),
                navbarMenu("Google Analytics",
                           tabPanel("Yesterday's Overview",
