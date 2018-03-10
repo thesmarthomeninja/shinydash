@@ -127,26 +127,66 @@ ui <- fluidPage(
                                    )
                                    )),
                navbarMenu("Google Analytics",
-                          tabPanel("Yesterday's Overview",
+                          tabPanel("Performance Overview",
                                    sidebarLayout(
-                                       sidebarPanel(id="gaSidebar",
-                                                    dateRangeInput("adwordsDateRange","Date Range"),
-                                                    actionButton("getAdWordsData", "Get Data")
-                                                    ),
-                                       mainPanel(
-                                           img(src="exampleimg.jpg")
-                                       )
+                                       sidebarPanel(actionButton("plotPerformanceOverview", "Plot Data")),
+                                       mainPanel(plotOutput("performanceOverviewPlot"))
                                    )
                                    ),
-                          tabPanel("New vs Returning"),
-                          tabPanel("Hostnames"),
-                          tabPanel("Device Categories"),
-                          tabPanel("Channel Performance"),
-                          tabPanel("Pages Performance"),
-                          tabPanel("Landing Pages Performance"),
-                          tabPanel("e-Commerce Performance"),
-                          tabPanel("Session Count"),
-                          tabPanel("Days Since Last Session"),
+                          tabPanel("New vs Returning",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotNewVsReturning", "Plot Data")),
+                                       mainPanel(plotOutput("newVsReturningPlot"))
+                                   )
+                                   ),
+                          tabPanel("Hostnames",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotHostnames", "Plot Data")),
+                                       mainPanel(tableOutput("hostnamesPlot"))
+                                   )
+                                   ),
+                          tabPanel("Device Categories",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotGaDeviceCategory", "Plot Data")),
+                                       mainPanel(plotOutput("gaDeviceCategoryPlot"))
+                                   )
+                                   ),
+                          tabPanel("Channel Performance",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotChannelPerformance", "Plot Data")),
+                                       mainPanel(plotlyOutput("channelPerformancePlot"))
+                                   )
+                                   ),
+                          tabPanel("Pages Performance",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotPagePerformance", "Plot Data")),
+                                       mainPanel(plotlyOutput("pagePerformancePlot"))
+                                   )
+                                   ),
+                          tabPanel("Landing Pages Performance",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotLpPerformance", "Plot Data")),
+                                       mainPanel(plotlyOutput("lpPerformancePlot"))
+                                   )
+                                   ),
+                          tabPanel("e-Commerce Performance",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotEcomPerformance", "Plot Data")),
+                                       mainPanel(plotOutput("ecomPerformancePlot"))
+                                   )
+                                   ),
+                          tabPanel("Session Count",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotSessionCount", "Plot Data")),
+                                       mainPanel(plotOutput("sessionCountPlot"))
+                                   )
+                                   ),
+                          tabPanel("Days Since Last Session",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotDaysSinceLastSession", "Plot Data")),
+                                       mainPanel(plotOutput("daysSinceLastSessionPlot"))
+                                   )
+                                   ),
                           tabPanel("Session Duration"),
                           tabPanel("Page Depth"),
                           tabPanel("Correlation Plot"),
@@ -154,6 +194,7 @@ ui <- fluidPage(
                           tabPanel("Events"),
                           tabPanel("Goal Performance"),
                           tabPanel("Product Performance"),
+                          tabPanel("Anomaly Detector"),
                           tabPanel("Search Terms")
                ))
 )

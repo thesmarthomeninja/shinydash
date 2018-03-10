@@ -12,11 +12,12 @@ server <- function(input, output, session) {
                    shiny_access_token = analyticsAccessToken())
     })
 
+    selectedId <- callModule(authDropdown, "auth_menu", ga.table = account_list)
+
     output$globalSettings <- renderUI({
         accList <- account_list()
         sidebarPanel("",
-                     selectInput("gaViewId", "Choose GA View",
-                                 choices=unique(accList$accountName)),
+                     authDropdownUI("auth_menu"),
                      textInput("adwordsAccountId", "Account ID",
                                placeholder = "XXX-XXX-XXXX",
                                width = "35%"),
@@ -630,6 +631,198 @@ server <- function(input, output, session) {
             ggplot(tidyDeviceSchedule, aes(x=as.numeric(HourOfDay), y=value, color=Device)) +
                 geom_line() +
                 facet_grid(metric~DayOfWeek, scales = "free_y")
+        })
+    })
+
+    observeEvent(input$plotPerformanceOverview,{
+        gaPerformanceOverview <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
+                                              metrics = c('sessions','users','sessionsPerUser','pageviewsPerSession',
+                                                          'avgSessionDuration','bounceRate','transactions','transactionRevenue',
+                                                          'revenuePerTransaction','transactionsPerSession'),
+                                              dimensions = 'date',
+                                              anti_sample = TRUE)
+
+        names(gaPerformanceOverview) <- c('Date','Sessions','Users','SessionsPerUser','PagesPerSession',
+                                      'AvgSessionDuratio','BounceRate','Transactions','Revenue','AvgOrderValue','ConversionRate')
+
+        longGaPerformanceOverview <- gaPerformanceOverview %>% gather(metric, value, Sessions:ConversionRate)
+
+        output$performanceOverviewPlot <- renderPlot({
+            ggplot(longGaPerformanceOverview, aes(x = Date, y = value)) +
+            geom_line() +
+                facet_grid(metric~., scales = "free_y")
+        })
+    })
+
+    observeEvent(input$plotNewVsReturning,{
+        newVsReturning <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
+                                           metrics = 'users',
+                                           dimensions = c('date','userType'),
+                                           anti_sample = TRUE)
+
+        names(newVsReturning) <- c('Date','userType','Users')
+
+        output$newVsReturningPlot <- renderPlot({
+            ggplot(newVsReturning) +
+            geom_area(aes(x = Date, y = Users, fill = userType), position = "stack") +
+                theme(legend.position = "bottom")
+        })
+    })
+
+    observeEvent(input$plotHostnames,{
+        hostnames <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
+                                      metrics = 'sessions',
+                                      dimensions = 'hostname',
+                                      anti_sample = TRUE)
+
+        output$hostnamesPlot <- renderTable(hostnames %>% arrange(desc(sessions)))
+    })
+
+    observeEvent(input$plotGaDeviceCategory,{
+        gaDeviceCategory <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
+                                           metrics = 'sessions',
+                                           dimensions = c('date','deviceCategory'),
+                                           anti_sample = TRUE)
+
+        names(gaDeviceCategory) <- c('Date','deviceCategory','Sessions')
+
+        output$gaDeviceCategoryPlot <- renderPlot({
+            ggplot(gaDeviceCategory) +
+            geom_area(aes(x = Date, y = Sessions, fill = deviceCategory), position = "stack") +
+                theme(legend.position = "bottom")
+        })
+    })
+
+    observeEvent(input$plotChannelPerformance,{
+        channelPerformance <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
+                                               metrics = c('transactionRevenue','revenuePerTransaction','transactionsPerSession'),
+                                               dimensions = 'channelGrouping',
+                                               anti_sample = TRUE)
+
+        output$channelPerformancePlot <- renderPlotly({
+            plot_ly(data = channelPerformance, x = ~transactionsPerSession, y = ~revenuePerTransaction, size = ~transactionRevenue,
+                text = ~paste("Channel: ", channelGrouping, "<br>Revenue: ", transactionRevenue,
+                              "<br>AvgOrderValue: ", revenuePerTransaction, "<br>ConversionRate: ", transactionsPerSession))
+        })
+    })
+
+    observeEvent(input$plotPagePerformance,{
+        pagesPerformance <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
+                                             metrics = c('pageviews','avgTimeOnPage','pageValue'),
+                                             dimensions = 'pagePath',
+                                             anti_sample = TRUE)
+
+        output$pagePerformancePlot <- renderPlotly({
+            plot_ly(data = pagesPerformance, x = ~log(avgTimeOnPage), y = ~log(pageValue), size = ~pageviews,
+                text = ~paste("Page: ", pagePath, "<br>Pageviews: ", pageviews,
+                              "<br>AvgTimeOnPage: ", avgTimeOnPage, "<br>PageValue: ", pageValue))
+        })
+    })
+
+    observeEvent(input$plotLpPerformance,{
+        landingPagesPerformance <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
+                                                    metrics = c('sessions','avgSessionDuration','transactionsPerSession'),
+                                                    dimensions = 'landingPagePath',
+                                                    anti_sample = TRUE)
+
+        output$lpPerformancePlot <- renderPlotly({
+            plot_ly(data = landingPagesPerformance, x = ~log(avgSessionDuration), y = ~log(transactionsPerSession), size = ~sessions,
+                text = ~paste("LandingPage: ", landingPagePath, "<br>Sessions: ", sessions,
+                              "<br>AvgSessionDuration: ", avgSessionDuration, "<br>ConversionRate: ", transactionsPerSession))
+        })
+    })
+
+    observeEvent(input$plotEcomPerformance,{
+        ecommerceOverview <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
+                                              metrics = c('transactions','transactionsPerSession','transactionRevenue',
+                                                          'revenuePerTransaction'),
+                                              dimensions = 'date',
+                                              anti_sample = TRUE)
+
+        names(ecommerceOverview) <- c('Date','Transactions','ConversionRate','Revenue','AvgOrderValue')
+
+        longEcommerceOverview <- ecommerceOverview %>% gather(metric, value, Transactions:AvgOrderValue)
+
+        output$ecomPerformancePlot <- renderPlot({
+            ggplot(longEcommerceOverview, aes(x = Date, y = value)) +
+                geom_line() +
+                facet_grid(metric~., scales = "free_y")
+        })
+    })
+
+    observeEvent(input$plotSessionCount,{
+        sessionCount <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
+                                         metrics = c('users','pageviews'),
+                                         dimensions = 'sessionCount',
+                                         anti_sample = TRUE)
+
+        sessionCount$sessionCount <- as.numeric(sessionCount$sessionCount)
+        sessionCount$bucket <- NA
+
+        sessionCount[sessionCount$sessionCount == 1,"bucket"] <- '1'
+        sessionCount[sessionCount$sessionCount == 2,"bucket"] <- '2'
+        sessionCount[sessionCount$sessionCount == 3,"bucket"] <- '3'
+        sessionCount[sessionCount$sessionCount == 4,"bucket"] <- '4'
+        sessionCount[sessionCount$sessionCount == 5,"bucket"] <- '5'
+        sessionCount[sessionCount$sessionCount == 6,"bucket"] <- '6'
+        sessionCount[sessionCount$sessionCount == 7,"bucket"] <- '7'
+        sessionCount[sessionCount$sessionCount == 8,"bucket"] <- '8'
+        sessionCount[sessionCount$sessionCount == 9,"bucket"] <- '9'
+        sessionCount[sessionCount$sessionCount > 9 & sessionCount$sessionCount < 26,"bucket"] <- '10 - 25'
+        sessionCount[sessionCount$sessionCount > 25 & sessionCount$sessionCount < 51,"bucket"] <- '26 - 50'
+        sessionCount[sessionCount$sessionCount > 50 & sessionCount$sessionCount < 101,"bucket"] <- '51 - 100'
+        sessionCount[sessionCount$sessionCount > 100,"bucket"] <- '> 100'
+
+        sessionCountGrouped <- sessionCount %>% group_by(bucket) %>% summarize(Users = sum(users), Pageviews = sum(pageviews)) %>%
+            gather(metric, value, Users:Pageviews)
+
+        sessionCountGrouped$bucket <- factor(sessionCountGrouped$bucket, levels = c('1','2','3','4','5','6','7','8','9',
+                                                                                    '10 - 25','26 - 50','51 - 100','> 100'))
+
+        output$sessionCountPlot <- renderPlot({
+            ggplot(sessionCountGrouped, aes(x = bucket, y = value, fill = metric)) +
+                geom_col(position='dodge') +
+                scale_y_continuous(labels=comma) +
+                coord_flip()
+        })
+    })
+
+    observeEvent(input$plotDaysSinceLastSession,{
+        daysSinceLastSession <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
+                                                 metrics = c('users','pageviews','sessions'),
+                                                 dimensions = 'daysSinceLastSession',
+                                                 anti_sample = TRUE)
+
+        daysSinceLastSession$daysSinceLastSession <- as.numeric(daysSinceLastSession$daysSinceLastSession)
+        daysSinceLastSession$bucket <- NA
+
+        daysSinceLastSession[daysSinceLastSession$daysSinceLastSession == 0,"bucket"] <- '0'
+        daysSinceLastSession[daysSinceLastSession$daysSinceLastSession == 1,"bucket"] <- '1'
+        daysSinceLastSession[daysSinceLastSession$daysSinceLastSession == 2,"bucket"] <- '2'
+        daysSinceLastSession[daysSinceLastSession$daysSinceLastSession == 3,"bucket"] <- '3'
+        daysSinceLastSession[daysSinceLastSession$daysSinceLastSession == 4,"bucket"] <- '4'
+        daysSinceLastSession[daysSinceLastSession$daysSinceLastSession == 5,"bucket"] <- '5'
+        daysSinceLastSession[daysSinceLastSession$daysSinceLastSession == 6,"bucket"] <- '6'
+        daysSinceLastSession[daysSinceLastSession$daysSinceLastSession == 7,"bucket"] <- '7'
+        daysSinceLastSession[daysSinceLastSession$daysSinceLastSession == 8,"bucket"] <- '8'
+        daysSinceLastSession[daysSinceLastSession$daysSinceLastSession == 9,"bucket"] <- '9'
+        daysSinceLastSession[daysSinceLastSession$daysSinceLastSession > 9 & daysSinceLastSession$daysSinceLastSession < 26,"bucket"] <- '10 - 25'
+        daysSinceLastSession[daysSinceLastSession$daysSinceLastSession > 25 & daysSinceLastSession$daysSinceLastSession < 51,"bucket"] <- '26 - 50'
+        daysSinceLastSession[daysSinceLastSession$daysSinceLastSession > 50 & daysSinceLastSession$daysSinceLastSession < 101,"bucket"] <- '51 - 100'
+        daysSinceLastSession[daysSinceLastSession$daysSinceLastSession > 100,"bucket"] <- '> 100'
+
+        daysSinceLastSessionGrouped <- daysSinceLastSession %>% group_by(bucket) %>%
+            summarize(Users = sum(users), Pageviews = sum(pageviews), Sessions = sum(sessions)) %>%
+            gather(metric, value, Users:Sessions)
+
+        daysSinceLastSessionGrouped$bucket <- factor(daysSinceLastSessionGrouped$bucket,
+                                                     levels = c('0','1','2','3','4','5','6','7','8','9','10 - 25','26 - 50','51 - 100','> 100'))
+
+        output$daysSinceLastSessionPlot <- renderPlot({
+            ggplot(daysSinceLastSessionGrouped, aes(x = bucket, y = value, fill = metric)) +
+                geom_col(position='dodge') +
+                scale_y_continuous(labels=comma) +
+                coord_flip()
         })
     })
 }
