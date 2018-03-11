@@ -825,4 +825,294 @@ server <- function(input, output, session) {
                 coord_flip()
         })
     })
+
+    observeEvent(input$plotSessionDuration,{
+        sessionDuration <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
+                                            metrics = c('users','pageviews','sessions'),
+                                            dimensions = 'sessionDurationBucket',
+                                            anti_sample = TRUE)
+
+        sessionDuration$sessionDurationBucket <- as.numeric(sessionDuration$sessionDurationBucket)
+        sessionDuration$bucket <- NA
+
+        sessionDuration[sessionDuration$sessionDurationBucket < 11,"bucket"] <- '0 - 10'
+        sessionDuration[sessionDuration$sessionDurationBucket > 10 & sessionDuration$sessionDurationBucket < 31,"bucket"] <- '11 - 30'
+        sessionDuration[sessionDuration$sessionDurationBucket > 30 & sessionDuration$sessionDurationBucket < 61,"bucket"] <- '31 - 60'
+        sessionDuration[sessionDuration$sessionDurationBucket > 60 & sessionDuration$sessionDurationBucket < 181,"bucket"] <- '61 - 180'
+        sessionDuration[sessionDuration$sessionDurationBucket > 180 & sessionDuration$sessionDurationBucket < 601,"bucket"] <- '181 - 600'
+        sessionDuration[sessionDuration$sessionDurationBucket > 600 & sessionDuration$sessionDurationBucket < 1801,"bucket"] <- '601 - 1800'
+        sessionDuration[sessionDuration$sessionDurationBucket > 1800,"bucket"] <- '> 1800'
+
+        sessionDurationGrouped <- sessionDuration %>% group_by(bucket) %>%
+            summarize(Users = sum(users), Pageviews = sum(pageviews), Sessions = sum(sessions)) %>%
+            gather(metric, value, Users:Sessions)
+
+        sessionDurationGrouped$bucket <- factor(sessionDurationGrouped$bucket,
+                                                levels = c('0 - 10','11 - 30','31 - 60','61 - 180','181 - 600','601 - 1800','> 1800'))
+
+        output$sessionDurationPlot <- renderPlot({
+            ggplot(sessionDurationGrouped, aes(x = bucket, y = value, fill = metric)) +
+                geom_col(position='dodge') +
+                scale_y_continuous(labels=comma) +
+                coord_flip()
+        })
+    })
+
+    observeEvent(input$plotPageDepth,{
+        pageDepth <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
+                                      metrics = c('users','pageviews','sessions'),
+                                      dimensions = 'pageDepth',
+                                      anti_sample = TRUE)
+
+        pageDepth$pageDepth <- as.numeric(pageDepth$pageDepth)
+        pageDepth$bucket <- NA
+
+        pageDepth[pageDepth$pageDepth == 0,"bucket"] <- '0'
+        pageDepth[pageDepth$pageDepth == 1,"bucket"] <- '1'
+        pageDepth[pageDepth$pageDepth == 2,"bucket"] <- '2'
+        pageDepth[pageDepth$pageDepth == 3,"bucket"] <- '3'
+        pageDepth[pageDepth$pageDepth == 4,"bucket"] <- '4'
+        pageDepth[pageDepth$pageDepth == 5,"bucket"] <- '5'
+        pageDepth[pageDepth$pageDepth == 6,"bucket"] <- '6'
+        pageDepth[pageDepth$pageDepth == 7,"bucket"] <- '7'
+        pageDepth[pageDepth$pageDepth == 8,"bucket"] <- '8'
+        pageDepth[pageDepth$pageDepth == 9,"bucket"] <- '9'
+        pageDepth[pageDepth$pageDepth == 10,"bucket"] <- '10'
+        pageDepth[pageDepth$pageDepth == 11,"bucket"] <- '11'
+        pageDepth[pageDepth$pageDepth == 12,"bucket"] <- '12'
+        pageDepth[pageDepth$pageDepth == 13,"bucket"] <- '13'
+        pageDepth[pageDepth$pageDepth == 14,"bucket"] <- '14'
+        pageDepth[pageDepth$pageDepth == 15,"bucket"] <- '15'
+        pageDepth[pageDepth$pageDepth == 16,"bucket"] <- '16'
+        pageDepth[pageDepth$pageDepth == 17,"bucket"] <- '17'
+        pageDepth[pageDepth$pageDepth == 18,"bucket"] <- '18'
+        pageDepth[pageDepth$pageDepth == 19,"bucket"] <- '19'
+        pageDepth[pageDepth$pageDepth == 20,"bucket"] <- '20'
+        pageDepth[pageDepth$pageDepth > 20,"bucket"] <- '> 20'
+
+        pageDepthGrouped <- pageDepth %>% group_by(bucket) %>%
+            summarize(Users = sum(users), Pageviews = sum(pageviews), Sessions = sum(sessions)) %>%
+            gather(metric, value, Users:Sessions)
+
+        pageDepthGrouped$bucket <- factor(pageDepthGrouped$bucket,
+                                          levels = c('0','1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
+                                                     '11', '12', '13', '14', '15', '16', '17', '18', '19', '20','> 20'))
+
+        output$pageDepthPlot <- renderPlot({
+            ggplot(pageDepthGrouped, aes(x = bucket, y = value, fill = metric)) +
+                geom_col(position='dodge') +
+                scale_y_continuous(labels=comma) +
+                coord_flip()
+        })
+    })
+
+    observeEvent(input$plotGaCorplot,{
+        gaCorrelationData <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
+                                            metrics = c('sessions','users','sessionsPerUser','pageviewsPerSession', 'avgSessionDuration',
+                                                        'bounceRate','transactions', 'transactionRevenue',
+                                                        'revenuePerTransaction','transactionsPerSession'),
+                                            dimensions = 'date',
+                                            anti_sample = TRUE)
+
+        names(gaCorrelationData) <- c('Date','Sessions','Users','SessionsPerUser','PagesPerSession',
+                                      'AvgSessionDuration','BounceRate','Transactions','Revenue','AvgOrderValue','ConversionRate')
+
+        corr <- cor(gaCorrelationData[,-1])
+
+        output$gaCorPlot <- renderPlot(corrplot(corr, method = "pie", type = "upper"))
+    })
+
+    observeEvent(input$plotCityPerformance,{
+        cityPerformance <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
+                                            metrics = c('pageviews','sessions','bounceRate','pageviewsPerSession',
+                                                        'transactionRevenue','transactionsPerSession'),
+                                            dimensions = c('city','longitude','latitude'),
+                                            anti_sample = TRUE)
+
+        cityPerformance$latitude <- as.numeric(cityPerformance$latitude)
+        cityPerformance$longitude <- as.numeric(cityPerformance$longitude)
+
+        ireland <- get_map('Athlone', zoom=7)
+
+        output$pageviewsGgMap <- renderPlot({
+            ggmap(ireland) + geom_point(data = cityPerformance, aes(x = longitude, y = latitude, size = pageviews),
+                                        color = 'blue', alpha = 0.5) +
+                theme(legend.position = "bottom") +
+                scale_size_continuous(labels=comma)
+        })
+
+        output$sessionsGgMap <- renderPlot({
+            ggmap(ireland) + geom_point(data = cityPerformance, aes(x = longitude, y = latitude, size = sessions),
+                                        color = 'blue', alpha = 0.5) +
+                theme(legend.position = "bottom") +
+                scale_size_continuous(labels=comma)
+        })
+
+        output$bounceRateGgMap <- renderPlot({
+            ggmap(ireland) + geom_point(data = cityPerformance, aes(x = longitude, y = latitude, size = bounceRate),
+                                        color = 'blue', alpha = 0.5) +
+                theme(legend.position = "bottom") +
+                scale_size_continuous(labels=comma)
+        })
+
+        output$pagesPerSessionGgMap <- renderPlot({
+            ggmap(ireland) + geom_point(data = cityPerformance, aes(x = longitude, y = latitude, size = pageviewsPerSession),
+                                        color = 'blue', alpha = 0.5) +
+                theme(legend.position = "bottom") +
+                scale_size_continuous(labels=comma)
+        })
+
+        output$revenueGgMap <- renderPlot({
+            ggmap(ireland) + geom_point(data = cityPerformance, aes(x = longitude, y = latitude, size = transactionRevenue),
+                                        color = 'blue', alpha = 0.5) +
+                theme(legend.position = "bottom") +
+                scale_size_continuous(labels=comma)
+        })
+
+        output$crGgMap <- renderPlot({
+            ggmap(ireland) + geom_point(data = cityPerformance, aes(x = longitude, y = latitude, size = transactionsPerSession),
+                                        color = 'blue', alpha = 0.5) +
+                theme(legend.position = "bottom") +
+                scale_size_continuous(labels=comma)
+        })
+    })
+
+    observeEvent(input$plotEventPerformance,{
+        eventPerformance <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
+                                             metrics = c('totalEvents','sessionsWithEvent'),
+                                             dimensions = c('date','eventCategory'),
+                                             anti_sample = TRUE)
+
+        output$totalEventsPlot <- renderPlot({
+            ggplot(eventPerformance, aes(x = date, y = totalEvents, color = eventCategory)) + geom_line()
+        })
+
+        output$sessionsWithEventsPlot <- renderPlot({
+            ggplot(eventPerformance, aes(x = date, y = sessionsWithEvent, color = eventCategory)) + geom_line()
+        })
+    })
+
+    observeEvent(input$plotGoalPerformance,{
+        goalPerformance <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
+                                            metrics = c('goal1Completions','goal2Completions','goal1ConversionRate','goal2ConversionRate'),
+                                            dimensions = 'date',
+                                            anti_sample = TRUE)
+
+        goalCompletions <- goalPerformance %>% gather(goal, completions, 2:3)
+        goalConversionRate <- goalPerformance %>% gather(goal, conversionRates, 4:5)
+
+        output$goalCompletionsPlot <- renderPlot(ggplot(goalCompletions, aes(x = date, y = completions, color = goal)) + geom_line())
+
+        output$goalConversionRatesPlot <- renderPlot(ggplot(goalConversionRate, aes(x = date, y = conversionRates, color = goal)) + geom_line())
+    })
+
+    observeEvent(input$plotProductPerformance,{
+        productPerformance <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
+                                               metrics = c('itemRevenue','revenuePerItem','itemsPerPurchase'),
+                                               dimensions = c('productSku','productName'),
+                                               anti_sample = TRUE)
+
+        output$productPerformancePlot <- renderPlotly({
+            plot_ly(data = productPerformance, x = ~log(revenuePerItem), y = ~log(itemsPerPurchase), size = ~itemRevenue,
+                    text = ~paste("Product: ", productName, "<br>SKU: ", productSku, "<br>Revenue: ", itemRevenue,
+                                  "<br>Avg. Price: ", revenuePerItem, "<br>Avg. Quantity: ", itemsPerPurchase))
+        })
+    })
+
+    observeEvent(input$plotGaAnomalies,{
+        anomalyGaData <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
+                                          metrics = c('sessions','pageviews','users','transactions', 'bounceRate','avgSessionDuration',
+                                                      'pageviewsPerSession','transactionsPerSession','revenuePerTransaction', 'transactionRevenue'),
+                                            dimensions = 'dateHour',
+                                            anti_sample = TRUE)
+
+        anomalyGaData <- anomalyGaData %>% mutate(DateHour = ymd_hms(paste0(anomalyGaData$dateHour,"0000")))
+
+        anomalyGaData <- anomalyGaData %>% arrange(DateHour)
+
+        anomSessions <- AnomalyDetectionTs(anomalyGaData[,c("DateHour","sessions")], direction='both',
+                                         plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Sessions")
+        output$sessionAnomalies <- renderPlot(anomSessions$plot)
+
+        anomPageviews <- AnomalyDetectionTs(anomalyGaData[,c("DateHour","pageviews")], direction='both',
+                                         plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Pageviews")
+        output$pageviewAnomalies <- renderPlot(anomPageviews$plot)
+
+        anomUsers <- AnomalyDetectionTs(anomalyGaData[,c("DateHour","users")], direction='both',
+                                         plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Users")
+        output$userAnomalies <- renderPlot(anomUsers$plot)
+
+        anomBounceRate <- AnomalyDetectionTs(anomalyGaData[,c("DateHour","bounceRate")], direction='both',
+                                         plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Bounce Rate")
+        output$bounceRateAnomalies <- renderPlot(anomBounceRate$plot)
+
+        anomAvgSessionDuration <- AnomalyDetectionTs(anomalyGaData[,c("DateHour","avgSessionDuration")], direction='both',
+                                         plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Avg Session Duration")
+        output$avgSessionDurationAnomalies <- renderPlot(anomAvgSessionDuration$plot)
+
+        anomPagesPerSession <- AnomalyDetectionTs(anomalyGaData[,c("DateHour","pageviewsPerSession")], direction='both',
+                                         plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Pages Per Session")
+        output$pagesPerSessionAnomalies <- renderPlot(anomPagesPerSession$plot)
+
+        anomTransactions <- AnomalyDetectionTs(anomalyGaData[,c("DateHour","transactions")], direction='both',
+                                         plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Transactions")
+        output$transactionAnomalies <- renderPlot(anomTransactions$plot)
+
+        anomEcomConversionRate <- AnomalyDetectionTs(anomalyGaData[,c("DateHour","transactionsPerSession")], direction='both',
+                                         plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Conversion Rate")
+        output$ecomConversionRateAnomalies <- renderPlot(anomEcomConversionRate$plot)
+
+        anomRevenue <- AnomalyDetectionTs(anomalyGaData[,c("DateHour","transactionRevenue")], direction='both',
+                                         plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Revenue")
+        output$revenueAnomalies <- renderPlot(anomRevenue$plot)
+
+        anomAvgOrderValue <- AnomalyDetectionTs(anomalyGaData[,c("DateHour","revenuePerTransaction")], direction='both',
+                                         plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "AOV")
+        output$avgOrderValueAnomalies <- renderPlot(anomAvgOrderValue$plot)
+    })
+
+    observeEvent(input$plotSearchTerms,{
+        searchTerms <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
+                                        metrics = c('searchUniques','avgSearchDuration','avgSearchDepth'),
+                                        dimensions = c('searchKeyword','searchKeywordRefinement'),
+                                        anti_sample = TRUE)
+
+        set.seed(1234)
+
+        output$uniqueSearches <- renderPlot({
+            wordcloud(words = searchTerms$searchKeyword, freq = searchTerms$searchUniques, min.freq = 1,
+                      max.words=200, random.order=FALSE, rot.per=0.35,
+                      colors=brewer.pal(8, "Dark2"))
+        })
+
+        output$uniqueSearchesRefinement <- renderPlot({
+            wordcloud(words = searchTerms$searchKeywordRefinement, freq = searchTerms$searchUniques, min.freq = 1,
+                      max.words=200, random.order=FALSE, rot.per=0.35,
+                      colors=brewer.pal(8, "Dark2"))
+        })
+
+        output$avgSearchDepth <- renderPlot({
+            wordcloud(words = searchTerms$searchKeyword, freq = searchTerms$avgSearchDepth, min.freq = 1,
+                      max.words=200, random.order=FALSE, rot.per=0.35,
+                      colors=brewer.pal(8, "Dark2"))
+        })
+
+        output$avgSearchDepthRefinement <- renderPlot({
+            wordcloud(words = searchTerms$searchKeywordRefinement, freq = searchTerms$avgSearchDepth, min.freq = 1,
+                      max.words=200, random.order=FALSE, rot.per=0.35,
+                      colors=brewer.pal(8, "Dark2"))
+        })
+
+        output$avgSearchDuration <- renderPlot({
+            wordcloud(words = searchTerms$searchKeyword, freq = searchTerms$avgSearchDuration, min.freq = 1,
+                      max.words=200, random.order=FALSE, rot.per=0.35,
+                      colors=brewer.pal(8, "Dark2"))
+        })
+
+        output$avgSearchDurationRefinement <- renderPlot({
+            wordcloud(words = searchTerms$searchKeywordRefinement, freq = searchTerms$avgSearchDuration, min.freq = 1,
+                      max.words=200, random.order=FALSE, rot.per=0.35,
+                      colors=brewer.pal(8, "Dark2"))
+        })
+    })
 }

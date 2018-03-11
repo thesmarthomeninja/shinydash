@@ -187,14 +187,105 @@ ui <- fluidPage(
                                        mainPanel(plotOutput("daysSinceLastSessionPlot"))
                                    )
                                    ),
-                          tabPanel("Session Duration"),
-                          tabPanel("Page Depth"),
-                          tabPanel("Correlation Plot"),
-                          tabPanel("City Performance"),
-                          tabPanel("Events"),
-                          tabPanel("Goal Performance"),
-                          tabPanel("Product Performance"),
-                          tabPanel("Anomaly Detector"),
-                          tabPanel("Search Terms")
-               ))
+                          tabPanel("Session Duration",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotSessionDuration", "Plot Data")),
+                                       mainPanel(plotOutput("sessionDurationPlot"))
+                                   )
+                                   ),
+                          tabPanel("Page Depth",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotPageDepth", "Plot Data")),
+                                       mainPanel(plotOutput("pageDepthPlot"))
+                                   )
+                                   ),
+                          tabPanel("Correlation Plot",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotGaCorplot", "Plot Data")),
+                                       mainPanel(plotOutput("gaCorPlot"))
+                                   )
+                                   ),
+                          tabPanel("City Performance",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotCityPerformance", "Plot Data")),
+                                       mainPanel(
+                                           tabsetPanel(
+                                               tabPanel("Pageviews", plotOutput("pageviewsGgMap")),
+                                               tabPanel("Sessions", plotOutput("sessionsGgMap")),
+                                               tabPanel("Bounce Rate", plotOutput("bounceRateGgMap")),
+                                               tabPanel("Pages/Session", plotOutput("pagesPerSessionGgMap")),
+                                               tabPanel("Revenue", plotOutput("revenueGgMap")),
+                                               tabPanel("Conversion Rate", plotOutput("crGgMap"))
+                                           ))
+                                   )
+                                   ),
+                          tabPanel("Events",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotEventPerformance", "Plot Data")),
+                                       mainPanel(
+                                           tabsetPanel(
+                                               tabPanel("Total Events", plotOutput("totalEventsPlot")),
+                                               tabPanel("Sessions With Events", plotOutput("sessionsWithEventsPlot"))
+                                           ))
+                                   )
+                                   ),
+                          tabPanel("Goal Performance",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotGoalPerformance", "Plot Data")),
+                                       mainPanel(
+                                           tabsetPanel(
+                                               tabPanel("Goal Completions", plotOutput("goalCompletionsPlot")),
+                                               tabPanel("Conversion Rates", plotOutput("goalConversionRatesPlot"))
+                                           ))
+                                   )
+                                   ),
+                          tabPanel("Product Performance",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotProductPerformance", "Plot Data")),
+                                       mainPanel(plotlyOutput("productPerformancePlot"))
+                                   )
+                                   ),
+                          tabPanel("Anomaly Detector",
+                                   sidebarPanel(actionButton("plotGaAnomalies", "Plot Data")),
+                                   mainPanel(
+                                       tabsetPanel(
+                                           tabPanel("Acquisition",
+                                                        tabsetPanel(
+                                                            tabPanel("Sessions", plotOutput("sessionAnomalies")),
+                                                            tabPanel("Users", plotOutput("userAnomalies")),
+                                                            tabPanel("Pageviews", plotOutput("pageviewAnomalies"))
+                                                        )),
+                                           tabPanel("Behaviour",
+                                                        tabsetPanel(
+                                                            tabPanel("Bounce Rate", plotOutput("bounceRateAnomalies")),
+                                                            tabPanel("Avg Session Duration", plotOutput("avgSessionDurationAnomalies")),
+                                                            tabPanel("Pages/Session", plotOutput("pagesPerSessionAnomalies"))
+                                                        )),
+                                           tabPanel("Conversions",
+                                                    tabsetPanel(
+                                                        tabPanel("Transactions", plotOutput("transactionAnomalies")),
+                                                        tabPanel("Revenue", plotOutput("revenueAnomalies")),
+                                                        tabPanel("Conversion Rate", plotOutput("ecomConversionRateAnomalies")),
+                                                        tabPanel("AOV", plotOutput("avgOrderValueAnomalies"))
+                                                    ))
+                                           ))
+                                   ),
+                          tabPanel("Search Terms",
+                                   sidebarLayout(
+                                       sidebarPanel(actionButton("plotSearchTerms", "Plot Data")),
+                                       mainPanel(
+                                           tabsetPanel(
+                                               tabPanel("Unique Searches",
+                                                        plotOutput("uniqueSearches"),
+                                                        plotOutput("uniqueSearchesRefinement")),
+                                               tabPanel("Avg Search Depth",
+                                                        plotOutput("avgSearchDepth"),
+                                                        plotOutput("avgSearchDepthRefinement")),
+                                               tabPanel("Avg Time After Search",
+                                                        plotOutput("avgSearchDuration"),
+                                                        plotOutput("avgSearchDurationRefinement"))
+                                           ))
+                                   )
+                                   )
+                          ))
 )
