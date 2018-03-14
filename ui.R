@@ -23,9 +23,11 @@ ui <- fluidPage(
                                    ),
                           tabPanel("Ad Scheduling",
                                    sidebarLayout(
-                                       sidebarPanel(actionButton("plotAdScheduling", "Plot Data")),
+                                       sidebarPanel(
+                                         actionButton("plotAdScheduling", "Plot Data"),
+                                         downloadButton("downloadAdScheduling", "Save Plot")),
                                        mainPanel(
-                                           tabsetPanel(
+                                           tabsetPanel(id = "adSchedulingTabs",
                                                tabPanel("Impressions", plotOutput("impressionHeatMap")),
                                                tabPanel("Impression Share", plotOutput("isHeatMap")),
                                                tabPanel("Conversions", plotOutput("conversionHeatMap")),

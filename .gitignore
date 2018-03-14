@@ -37,3 +37,6 @@ global.R*
 
 .gitignore
 .google.auth.RData.google.auth.RData.google.auth.RData
+.Rproj.user
+
+\.google\.auth\.RData
