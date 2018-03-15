@@ -1149,4 +1149,23 @@ server <- function(input, output, session) {
                 colors=brewer.pal(8, "Dark2"))
     })
   })
+  
+  observeEvent(input$plotExampleScatterplot,{
+    req(input$file1)
+    
+   df <- read.csv2(input$file1$datapath, header = TRUE, sep = ",") 
+   
+   output$exampleScatterplot <- renderPlot({
+     p <- ggplot(df, aes(as.numeric(x),as.numeric(y)))
+     
+     p <- p + geom_point()
+     
+     if(input$addSmooth){
+       p <- p + geom_smooth()
+     }
+     
+     print(p)
+     
+     })
+  })
 }

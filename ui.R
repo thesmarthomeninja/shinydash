@@ -289,5 +289,22 @@ ui <- fluidPage(
                                            ))
                                    )
                                    )
-                          ))
-)
+                          ),
+               navbarMenu("Other",
+                          tabPanel("Scatterplot",
+                                   sidebarLayout(
+                                     sidebarPanel(
+                                       fileInput("file1", "Choose CSV File",
+                                                 multiple = FALSE,
+                                                 accept = c("text/csv",
+                                                            "text/comma-separated-values,text/plain",
+                                                            ".csv")),
+                                       actionButton("plotExampleScatterplot", "Plot Data"),
+                                       checkboxInput("addSmooth", "Add Smooth")),
+                                     mainPanel(plotOutput("exampleScatterplot"))
+                                   )
+                          )
+               )
+    )
+    )
+    
