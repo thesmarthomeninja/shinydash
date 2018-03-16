@@ -245,7 +245,11 @@ ui <- fluidPage(
                                    ),
                           tabPanel("Product Performance",
                                    sidebarLayout(
-                                       sidebarPanel(actionButton("plotProductPerformance", "Plot Data")),
+                                       sidebarPanel(
+                                         actionButton("plotProductPerformance", "Plot Data"),
+                                         selectInput("sizeMetric", "Dot Size Metric:",
+                                                     c("Quantity" = "itemQuantity",
+                                                       "Revenue" = "itemRevenue"))),
                                        mainPanel(plotlyOutput("productPerformancePlot"))
                                    )
                                    ),

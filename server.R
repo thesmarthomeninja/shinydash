@@ -1051,12 +1051,12 @@ server <- function(input, output, session) {
   
   observeEvent(input$plotProductPerformance,{
     productPerformance <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
-                                           metrics = c('itemRevenue','revenuePerItem','itemsPerPurchase'),
+                                           metrics = c('itemRevenue','revenuePerItem','itemsPerPurchase','itemQuantity'),
                                            dimensions = c('productSku','productName'),
                                            anti_sample = TRUE)
     
     output$productPerformancePlot <- renderPlotly({
-      plot_ly(data = productPerformance, x = ~log(revenuePerItem), y = ~log(itemsPerPurchase), size = ~itemRevenue,
+      plot_ly(data = productPerformance, x = ~log(revenuePerItem), y = ~log(itemsPerPurchase), size = ~get(input$sizeMetric),
               text = ~paste("Product: ", productName, "<br>SKU: ", productSku, "<br>Revenue: ", itemRevenue,
                             "<br>Avg. Price: ", revenuePerItem, "<br>Avg. Quantity: ", itemsPerPurchase))
     })
