@@ -12,7 +12,9 @@ ui <- fluidPage(
                           tabPanel("Campaign Performance",
                                    sidebarLayout(
                                        sidebarPanel(actionButton("plotCampaignPerformance", "Plot Data")),
-                                       mainPanel(plotlyOutput("campaignPerformancePlot"))
+                                       mainPanel(
+                                         plotOutput("campaignPerformancePlot", brush = "cpBrush"),
+                                         verbatimTextOutput("cpSelectedPoints"))
                                    )
                                    ),
                           tabPanel("Correlation Plot",

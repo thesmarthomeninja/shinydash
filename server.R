@@ -40,11 +40,20 @@ server <- function(input, output, session) {
       summarize(Cost = sum(Cost), Conversions = sum(Conversions), CPA = sum(Cost)/sum(Conversions),
                 Clicks = sum(Clicks), ConversionRate = sum(Conversions)/sum(Clicks))
     
-    output$campaignPerformancePlot <- renderPlotly({
-      plot_ly(data = tidyCampaignPerformance, x = ~ConversionRate, y = ~CPA, size = ~Conversions,
-              text = ~paste("Campaign: ", Campaign, "<br>Cost: ", Cost, "<br>Conversions: ",
-                            Conversions, "<br>CPA: ", CPA, "<br>ConversionRate", ConversionRate),
-              type = "scatter", mode = "markers")
+#    output$campaignPerformancePlot <- renderPlotly({
+#      plot_ly(data = tidyCampaignPerformance, x = ~ConversionRate, y = ~CPA, size = ~Conversions,
+#              text = ~paste("Campaign: ", Campaign, "<br>Cost: ", Cost, "<br>Conversions: ",
+#                            Conversions, "<br>CPA: ", CPA, "<br>ConversionRate", ConversionRate),
+#              type = "scatter", mode = "markers")
+#    })
+    
+    output$campaignPerformancePlot <- renderPlot({
+      ggplot(tidyCampaignPerformance, aes(x = ConversionRate, y = CPA, size = Conversions)) + geom_point()
+      
+    })
+    
+    output$cpSelectedPoints <- renderPrint({
+      brushedPoints(tidyCampaignPerformance, input$cpBrush, xvar = "ConversionRate", yvar = "CPA")
     })
   })
   
