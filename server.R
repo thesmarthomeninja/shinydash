@@ -720,6 +720,13 @@ server <- function(input, output, session) {
     
     output$hostnamesPlot <- renderTable(hostnames %>% arrange(desc(sessions)))
   })
+    
+  output$dateSlider <- renderUI({
+      sliderInput("dateRangeSlider", "Date Range:",
+                  min = as.Date(input$dateRange[1]),
+                  max = as.Date(input$dateRange[2]),
+                  value=c(as.Date(input$dateRange[1]), as.Date(input$dateRange[2])))
+    })
   
   observeEvent(input$plotGaDeviceCategory,{
     gaDeviceCategory <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
@@ -727,10 +734,23 @@ server <- function(input, output, session) {
                                          dimensions = c('date','deviceCategory'),
                                          anti_sample = TRUE)
     
+#    gaDeviceCategory <- google_analytics("104371403", date_range = c("2018-03-01", "2018-03-15"),
+#                                         metrics = 'sessions',
+#                                         dimensions = c('date','deviceCategory'),
+#                                         anti_sample = TRUE)
+    
     names(gaDeviceCategory) <- c('Date','deviceCategory','Sessions')
     
+    filteredGaDeviceCategory <- reactive({
+      gaDeviceCategory %>% 
+      filter(Date >= input$dateRangeSlider[1] & Date <= input$dateRangeSlider[2])
+      })
+    
+#    filteredGaDeviceCategory <- gaDeviceCategory %>% 
+#      filter(Date >= "2018-03-07" & Date <= "2018-03-15")
+    
     output$gaDeviceCategoryPlot <- renderPlot({
-      ggplot(gaDeviceCategory) +
+      ggplot(filteredGaDeviceCategory()) +
         geom_area(aes(x = Date, y = Sessions, fill = deviceCategory), position = "stack") +
         theme(legend.position = "bottom")
     })

@@ -151,8 +151,11 @@ ui <- fluidPage(
                                    ),
                           tabPanel("Device Categories",
                                    sidebarLayout(
-                                       sidebarPanel(actionButton("plotGaDeviceCategory", "Plot Data")),
-                                       mainPanel(plotOutput("gaDeviceCategoryPlot"))
+                                       sidebarPanel(
+                                         actionButton("plotGaDeviceCategory", "Plot Data")),
+                                       mainPanel(
+                                         uiOutput("dateSlider"),
+                                         plotOutput("gaDeviceCategoryPlot"))
                                    )
                                    ),
                           tabPanel("Channel Performance",
