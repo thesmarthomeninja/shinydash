@@ -16,12 +16,12 @@ server <- function(input, output, session) {
   
   output$globalSettings <- renderUI({
     accList <- account_list()
-    sidebarPanel("",
-                 authDropdownUI("auth_menu"),
-                 textInput("adwordsAccountId", "Account ID",
-                           placeholder = "XXX-XXX-XXXX",
-                           width = "35%"),
-                 dateRangeInput("dateRange","Date Range")
+    tagList(
+      authDropdownUI("auth_menu"),
+      textInput("adwordsAccountId", "Account ID",
+                placeholder = "XXX-XXX-XXXX",
+                width = "35%"),
+      dateRangeInput("dateRange","Date Range")
     )
   })
   
@@ -40,12 +40,12 @@ server <- function(input, output, session) {
       summarize(Cost = sum(Cost), Conversions = sum(Conversions), CPA = sum(Cost)/sum(Conversions),
                 Clicks = sum(Clicks), ConversionRate = sum(Conversions)/sum(Clicks))
     
-#    output$campaignPerformancePlot <- renderPlotly({
-#      plot_ly(data = tidyCampaignPerformance, x = ~ConversionRate, y = ~CPA, size = ~Conversions,
-#              text = ~paste("Campaign: ", Campaign, "<br>Cost: ", Cost, "<br>Conversions: ",
-#                            Conversions, "<br>CPA: ", CPA, "<br>ConversionRate", ConversionRate),
-#              type = "scatter", mode = "markers")
-#    })
+    #    output$campaignPerformancePlot <- renderPlotly({
+    #      plot_ly(data = tidyCampaignPerformance, x = ~ConversionRate, y = ~CPA, size = ~Conversions,
+    #              text = ~paste("Campaign: ", Campaign, "<br>Cost: ", Cost, "<br>Conversions: ",
+    #                            Conversions, "<br>CPA: ", CPA, "<br>ConversionRate", ConversionRate),
+    #              type = "scatter", mode = "markers")
+    #    })
     
     output$campaignPerformancePlot <- renderPlot({
       ggplot(tidyCampaignPerformance, aes(x = ConversionRate, y = CPA, size = Conversions)) + geom_point()
@@ -155,7 +155,7 @@ server <- function(input, output, session) {
                "Impression Share" = print(isHeatMap()),
                "Conversions" = print(conversionHeatMap()),
                "CPA" = print(cpaHeatMap())
-               )
+        )
         
         dev.off()
       }
@@ -720,13 +720,13 @@ server <- function(input, output, session) {
     
     output$hostnamesPlot <- renderTable(hostnames %>% arrange(desc(sessions)))
   })
-    
+  
   output$dateSlider <- renderUI({
-      sliderInput("dateRangeSlider", "Date Range:",
-                  min = as.Date(input$dateRange[1]),
-                  max = as.Date(input$dateRange[2]),
-                  value=c(as.Date(input$dateRange[1]), as.Date(input$dateRange[2])))
-    })
+    sliderInput("dateRangeSlider", "Date Range:",
+                min = as.Date(input$dateRange[1]),
+                max = as.Date(input$dateRange[2]),
+                value=c(as.Date(input$dateRange[1]), as.Date(input$dateRange[2])))
+  })
   
   observeEvent(input$plotGaDeviceCategory,{
     gaDeviceCategory <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
@@ -734,20 +734,20 @@ server <- function(input, output, session) {
                                          dimensions = c('date','deviceCategory'),
                                          anti_sample = TRUE)
     
-#    gaDeviceCategory <- google_analytics("104371403", date_range = c("2018-03-01", "2018-03-15"),
-#                                         metrics = 'sessions',
-#                                         dimensions = c('date','deviceCategory'),
-#                                         anti_sample = TRUE)
+    #    gaDeviceCategory <- google_analytics("104371403", date_range = c("2018-03-01", "2018-03-15"),
+    #                                         metrics = 'sessions',
+    #                                         dimensions = c('date','deviceCategory'),
+    #                                         anti_sample = TRUE)
     
     names(gaDeviceCategory) <- c('Date','deviceCategory','Sessions')
     
     filteredGaDeviceCategory <- reactive({
       gaDeviceCategory %>% 
-      filter(Date >= input$dateRangeSlider[1] & Date <= input$dateRangeSlider[2])
-      })
+        filter(Date >= input$dateRangeSlider[1] & Date <= input$dateRangeSlider[2])
+    })
     
-#    filteredGaDeviceCategory <- gaDeviceCategory %>% 
-#      filter(Date >= "2018-03-07" & Date <= "2018-03-15")
+    #    filteredGaDeviceCategory <- gaDeviceCategory %>% 
+    #      filter(Date >= "2018-03-07" & Date <= "2018-03-15")
     
     output$gaDeviceCategoryPlot <- renderPlot({
       ggplot(filteredGaDeviceCategory()) +
@@ -1182,19 +1182,19 @@ server <- function(input, output, session) {
   observeEvent(input$plotExampleScatterplot,{
     req(input$file1)
     
-   df <- read.csv2(input$file1$datapath, header = TRUE, sep = ",") 
-   
-   output$exampleScatterplot <- renderPlot({
-     p <- ggplot(df, aes(as.numeric(x),as.numeric(y)))
-     
-     p <- p + geom_point()
-     
-     if(input$addSmooth){
-       p <- p + geom_smooth()
-     }
-     
-     print(p)
-     
-     })
+    df <- read.csv2(input$file1$datapath, header = TRUE, sep = ",") 
+    
+    output$exampleScatterplot <- renderPlot({
+      p <- ggplot(df, aes(as.numeric(x),as.numeric(y)))
+      
+      p <- p + geom_point()
+      
+      if(input$addSmooth){
+        p <- p + geom_smooth()
+      }
+      
+      print(p)
+      
+    })
   })
 }
