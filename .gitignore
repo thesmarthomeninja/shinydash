@@ -42,3 +42,5 @@ global.R*
 \.google\.auth\.RData
 .google.auth.RData
 *.png
+
+*.jpg

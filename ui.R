@@ -6,16 +6,17 @@ ui <- fluidPage(
   navbarPage(title = div(img(src="wg-logo.png", height = "50"), id = "logo"), windowTitle = "WG Analysis Tool",theme = shinytheme("flatly"),
              tabPanel("Settings",
                       sidebarLayout(
-                                    sidebarPanel(
-                                      googleAuthUI("gaLogin"),
-                                      uiOutput("globalSettings")),
-                                    mainPanel()
+                        sidebarPanel(
+                          googleAuthUI("gaLogin"),
+                          uiOutput("globalSettings")),
+                        mainPanel()
                       )
              ),
              navbarMenu("Google AdWords",
                         tabPanel("Campaign Performance",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotCampaignPerformance", "Plot Data")),
+                                   sidebarPanel(width = 3, 
+                                                actionButton("plotCampaignPerformance", "Plot Data")),
                                    mainPanel(
                                      plotOutput("campaignPerformancePlot", brush = "cpBrush"),
                                      verbatimTextOutput("cpSelectedPoints"))
@@ -23,15 +24,16 @@ ui <- fluidPage(
                         ),
                         tabPanel("Correlation Plot",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotCorrelationMatrix", "Plot Data")),
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotCorrelationMatrix", "Plot Data")),
                                    mainPanel(plotOutput("corrplot"))
                                  )
                         ),
                         tabPanel("Ad Scheduling",
                                  sidebarLayout(
-                                   sidebarPanel(
-                                     actionButton("plotAdScheduling", "Plot Data"),
-                                     downloadButton("downloadAdScheduling", "Save Plot")),
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotAdScheduling", "Plot Data"),
+                                                downloadButton("downloadAdScheduling", "Save Plot")),
                                    mainPanel(
                                      tabsetPanel(id = "adSchedulingTabs",
                                                  tabPanel("Impressions", plotOutput("impressionHeatMap")),
@@ -43,18 +45,20 @@ ui <- fluidPage(
                         ),
                         tabPanel("N-Grams",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotnGrams", "Plot Data")),
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotnGrams", "Plot Data")),
                                    mainPanel(
                                      tabsetPanel(
-                                       tabPanel("Unigrams", plotOutput("unigrams")),
-                                       tabPanel("Bigrams", plotOutput("bigrams")),
-                                       tabPanel("Trigrams", plotOutput("trigrams"))
+                                       tabPanel("Unigrams", plotOutput("unigrams", height = "800px")),
+                                       tabPanel("Bigrams", plotOutput("bigrams", height = "800px")),
+                                       tabPanel("Trigrams", plotOutput("trigrams", height = "800px"))
                                      ))
                                  )
                         ),
                         tabPanel("Impression Share",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotImpressionShare", "Plot Data")),
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotImpressionShare", "Plot Data")),
                                    mainPanel(
                                      plotOutput("isPlot"),
                                      plotOutput("isOtherPlot"))
@@ -62,38 +66,43 @@ ui <- fluidPage(
                         ),
                         tabPanel("Device Performance",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotDevicePerformance", "Plot Data")),
-                                   mainPanel(plotOutput("devicePlot"))
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotDevicePerformance", "Plot Data")),
+                                   mainPanel(plotOutput("devicePlot", height = "800px"))
                                  )
                         ),
                         tabPanel("Quality Score",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotQs", "Plot Data")),
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotQs", "Plot Data")),
                                    mainPanel(
                                      tabsetPanel(
                                        tabPanel("Ad Relevance", tableOutput("adRelevance")),
                                        tabPanel("LP Experience", tableOutput("lpExperience")),
                                        tabPanel("Expected CTR", tableOutput("expectedCtr")),
                                        tabPanel("Quality Score", tableOutput("qualityScore")),
-                                       tabPanel("Weighted QS", plotlyOutput("weightedQs"))
+                                       tabPanel("Weighted QS", plotlyOutput("weightedQs", height = "800px"))
                                      ))
                                  )
                         ),
                         tabPanel("Match Types",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotMatchTypes", "Plot Data")),
-                                   mainPanel(plotOutput("matchTypesPlot"))
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotMatchTypes", "Plot Data")),
+                                   mainPanel(plotOutput("matchTypesPlot", height = "800px"))
                                  )
                         ),
                         tabPanel("Ad-Keyword Combinations",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotAdKeywords", "Plot Data")),
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotAdKeywords", "Plot Data")),
                                    mainPanel(plotlyOutput("adKeywordsPlot"))
                                  )
                         ),
                         tabPanel("Performance Segments",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotPerformanceSegments", "Plot Data")),
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotPerformanceSegments", "Plot Data")),
                                    mainPanel(
                                      tabsetPanel(
                                        tabPanel("Converters", plotlyOutput("convertersPlot")),
@@ -104,7 +113,8 @@ ui <- fluidPage(
                         ),
                         tabPanel("Anomaly Detection",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotAnomalyDetection", "Plot Data")),
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotAnomalyDetection", "Plot Data")),
                                    mainPanel(
                                      tabsetPanel(
                                        tabPanel("Clicks", plotOutput("clickAnomalies")),
@@ -118,20 +128,23 @@ ui <- fluidPage(
                         ),
                         tabPanel("Treemaps",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotTreemaps", "Plot Data")),
-                                   mainPanel(plotOutput("treemapsPlot"))
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotTreemaps", "Plot Data")),
+                                   mainPanel(plotOutput("treemapsPlot", height = "600px"))
                                  )
                         ),
                         tabPanel("Audiences",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotAudiencePerformance", "Plot Data")),
-                                   mainPanel(tableOutput("audiencePerformanceTable"))
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotAudiencePerformance", "Plot Data")),
+                                   mainPanel(DTOutput("audiencePerformanceTable"))
                                  )
                         ),
                         tabPanel("Device-Schedule",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotDeviceSchedulePerformance", "Plot Data")),
-                                   mainPanel(plotOutput("deviceSchedulePerformancePlot"))
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotDeviceSchedulePerformance", "Plot Data")),
+                                   mainPanel(plotOutput("deviceSchedulePerformancePlot", height = "1200px"))
                                  )
                         )),
              navbarMenu("Google Analytics",

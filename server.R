@@ -48,7 +48,9 @@ server <- function(input, output, session) {
     #    })
     
     output$campaignPerformancePlot <- renderPlot({
-      ggplot(tidyCampaignPerformance, aes(x = ConversionRate, y = CPA, size = Conversions)) + geom_point()
+      ggplot(tidyCampaignPerformance, aes(x = ConversionRate, y = CPA, size = Conversions)) + 
+        geom_point(alpha = 0.5, color = "blue") +
+        theme_minimal()
       
     })
     
@@ -81,8 +83,10 @@ server <- function(input, output, session) {
     correlationData[!is.finite(correlationData$CPA),"CPA"] <- 0
     
     corr <- cor(correlationData)
+    significance <- cor.mtest(correlationData, conf.level = 0.95)
     
-    output$corrplot <- renderPlot(corrplot(corr, method = "pie", type = "upper"))
+    output$corrplot <- renderPlot(corrplot(corr, type = "upper", p.mat = significance$p, insig = "label_sig",
+                                           sig.level = c(.001, .01, .05), pch.cex = .9, pch.col = "white"))
   })
   
   observeEvent(input$plotAdScheduling,{
@@ -111,7 +115,8 @@ server <- function(input, output, session) {
     
     impressionHeatMap <- reactive({
       ggplot(accountPerformanceHeatmaps, aes(x=HourOfDay, y=DayOfWeek, z=Impressions)) +
-        geom_tile(aes(fill = Impressions)) + scale_fill_gradient(low="white", high="blue", labels=comma)
+        geom_tile(aes(fill = Impressions)) + scale_fill_gradientn(colours = c("green", "yellow", "red"), labels=comma) +
+        theme_minimal()
     })
     
     output$impressionHeatMap <- renderPlot({
@@ -120,7 +125,8 @@ server <- function(input, output, session) {
     
     isHeatMap <- reactive({
       ggplot(accountPerformanceHeatmaps, aes(x=HourOfDay, y=DayOfWeek, z=WeightedIS)) +
-        geom_tile(aes(fill = WeightedIS)) + scale_fill_gradient(low="white", high="blue", labels=comma)
+        geom_tile(aes(fill = WeightedIS)) + scale_fill_gradientn(colours = c("green", "yellow", "red"), labels=comma) +
+        theme_minimal()
     })
     
     output$isHeatMap <- renderPlot({
@@ -129,7 +135,8 @@ server <- function(input, output, session) {
     
     conversionHeatMap <- reactive({
       ggplot(accountPerformanceHeatmaps, aes(x=HourOfDay, y=DayOfWeek, z=Conversions)) +
-        geom_tile(aes(fill = Conversions)) + scale_fill_gradient(low="white", high="blue", labels=comma)
+        geom_tile(aes(fill = Conversions)) + scale_fill_gradientn(colours = c("green", "yellow", "red"), labels=comma) +
+        theme_minimal()
     })
     
     output$conversionHeatMap <- renderPlot({
@@ -138,7 +145,8 @@ server <- function(input, output, session) {
     
     cpaHeatMap <- reactive({
       ggplot(accountPerformanceHeatmaps, aes(x=HourOfDay, y=DayOfWeek, z=CPA)) +
-        geom_tile(aes(fill = CPA)) + scale_fill_gradient(low="white", high="blue", labels=comma)
+        geom_tile(aes(fill = CPA)) + scale_fill_gradientn(colours = c("green", "yellow", "red"), labels=comma) +
+        theme_minimal()
     })
     
     output$cpaHeatMap <- renderPlot({
@@ -148,7 +156,7 @@ server <- function(input, output, session) {
     output$downloadAdScheduling <- downloadHandler(
       filename = "testplot.png",
       content = function(file){
-        png(file)
+        png(file, width = 720)
         
         switch(currentAdSchedulingTab(),
                "Impressions" = print(impressionHeatMap()),
@@ -183,49 +191,49 @@ server <- function(input, output, session) {
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("word") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     pu_clicks <- unigrams %>% top_n(10, Clicks) %>% ggplot(aes(y=Clicks, x=reorder(word, Clicks))) +
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("word") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     pu_ctr <- unigrams %>% filter(Clicks > 100) %>% top_n(10, Ctr) %>% ggplot(aes(y=Ctr, x=reorder(word, Ctr))) +
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("word") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     pu_cpc <- unigrams %>% filter(Clicks > 100) %>% top_n(10, AvgCpc) %>% ggplot(aes(y=AvgCpc, x=reorder(word, AvgCpc))) +
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("word") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     pu_cost <- unigrams %>% top_n(10, Cost) %>% ggplot(aes(y=Cost, x=reorder(word, Cost))) +
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("word") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     pu_conv <- unigrams %>% top_n(10, Conversions) %>% ggplot(aes(y=Conversions, x=reorder(word, Conversions))) +
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("word") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     pu_cpa <- unigrams %>% filter(Conversions > 1) %>% top_n(10, Cpa) %>% ggplot(aes(y=Cpa, x=reorder(word, Cpa))) +
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("word") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     pu_cr <- unigrams %>% filter(Conversions > 1) %>% top_n(10, ConversionRate) %>% ggplot(aes(y=ConversionRate, x=reorder(word, ConversionRate))) +
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("word") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     output$unigrams <- renderPlot(plot_grid(pu_imp, pu_clicks, pu_ctr, pu_cpc, pu_cost, pu_conv, pu_cpa, pu_cr, ncol=2))
     
@@ -238,50 +246,50 @@ server <- function(input, output, session) {
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("phrase") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     pb_clicks <- bigrams %>% top_n(10, Clicks) %>% ggplot(aes(y=Clicks, x=reorder(bigram, Clicks))) +
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("phrase") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     pb_ctr <- bigrams %>% filter(Clicks > 100) %>% top_n(10, Ctr) %>% ggplot(aes(y=Ctr, x=reorder(bigram, Ctr))) +
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("phrase") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     pb_cpc <- bigrams %>% filter(Clicks > 100) %>% top_n(10, AvgCpc) %>% ggplot(aes(y=AvgCpc, x=reorder(bigram, AvgCpc))) +
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("phrase") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     pb_cost <- bigrams %>% top_n(10, Cost) %>% ggplot(aes(y=Cost, x=reorder(bigram, Cost))) +
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("phrase") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     pb_conv <- bigrams %>% top_n(10, Conversions) %>% ggplot(aes(y=Conversions, x=reorder(bigram, Conversions))) +
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("phrase") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     pb_cpa <- bigrams %>% filter(Conversions > 1) %>% top_n(10, Cpa) %>% ggplot(aes(y=Cpa, x=reorder(bigram, Cpa))) +
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("phrase") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     pb_cr <- bigrams %>% filter(Conversions > 1) %>% top_n(10, ConversionRate) %>%
       ggplot(aes(y=ConversionRate, x=reorder(bigram, ConversionRate))) +
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("phrase") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     output$bigrams <- renderPlot(plot_grid(pb_imp, pb_clicks, pb_ctr, pb_cpc, pb_cost, pb_conv, pb_cpa, pb_cr, ncol=2))
     
@@ -294,50 +302,50 @@ server <- function(input, output, session) {
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("phrase") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     pt_clicks <- trigrams %>% top_n(10, Clicks) %>% ggplot(aes(y=Clicks, x=reorder(trigram, Clicks))) +
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("phrase") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     pt_ctr <- trigrams %>% filter(Clicks > 100) %>% top_n(10, Ctr) %>% ggplot(aes(y=Ctr, x=reorder(trigram, Ctr))) +
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("phrase") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     pt_cpc <- trigrams %>% filter(Clicks > 100) %>% top_n(10, AvgCpc) %>% ggplot(aes(y=AvgCpc, x=reorder(trigram, AvgCpc))) +
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("phrase") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     pt_cost <- trigrams %>% top_n(10, Cost) %>% ggplot(aes(y=Cost, x=reorder(trigram, Cost))) +
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("phrase") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     pt_conv <- trigrams %>% top_n(10, Conversions) %>% ggplot(aes(y=Conversions, x=reorder(trigram, Conversions))) +
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("phrase") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     pt_cpa <- trigrams %>% filter(Conversions > 1) %>% top_n(10, Cpa) %>% ggplot(aes(y=Cpa, x=reorder(trigram, Cpa))) +
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("phrase") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     pt_cr <- trigrams %>% filter(Conversions > 1) %>% top_n(10, ConversionRate) %>%
       ggplot(aes(y=ConversionRate, x=reorder(trigram, ConversionRate))) +
       geom_bar(stat = "identity") +
       coord_flip() +
       xlab("phrase") +
-      theme(axis.text.y = element_text(size=8))
+      theme(axis.text.y = element_text(size=16))
     
     output$trigrams <- renderPlot(plot_grid(pt_imp, pt_clicks, pt_ctr, pt_cpc, pt_cost, pt_conv, pt_cpa, pt_cr, ncol=2))
     
@@ -376,12 +384,14 @@ server <- function(input, output, session) {
     output$isPlot <- renderPlot({
       ggplot(long_IS) +
         geom_area(aes(x = Date, y = value, fill = metric), position = "stack") +
+        theme_minimal() +
         theme(legend.position = "bottom")
     })
     
     output$isOtherPlot <- renderPlot({
       ggplot(long_other, aes(x = Date, y = value)) +
         geom_line() +
+        theme_minimal() +
         facet_wrap(~metric, ncol=1)
     })
   })
@@ -412,6 +422,7 @@ server <- function(input, output, session) {
       longAccountPerformanceDevice %>% ggplot(aes(x = Date, y = value, color = Device)) +
         geom_line() +
         facet_grid(metric ~ ., scales = "free_y") +
+        theme_minimal() +
         theme(legend.position = "bottom")
     })
     
@@ -483,6 +494,7 @@ server <- function(input, output, session) {
       ggplot(matchTypePerformanceLong, aes(y = value, x = Date, color = MatchType)) +
         geom_line() +
         facet_grid(metric ~ ., scales = "free_y") +
+        theme_minimal() +
         theme(legend.position = "bottom")
     })
   })
@@ -648,7 +660,12 @@ server <- function(input, output, session) {
              CPA = Cost/Conversions, ConversionRate = Conversions/Clicks) %>%
       select(-impPosition)
     
-    output$audiencePerformanceTable <- renderTable(tidyAudiencePerformance)
+    output$audiencePerformanceTable <- renderDT({
+      datatable(tidyAudiencePerformance, options = list(scrollX = T)) %>% 
+        formatCurrency(c("Cost", "AvgCpc","CPA")) %>% 
+        formatPercentage(c("CTR", "ConversionRate"), 2) %>% 
+        formatRound("AvgPosition", 2)
+    }) 
   })
   
   observeEvent(input$plotDeviceSchedulePerformance,{
@@ -673,6 +690,8 @@ server <- function(input, output, session) {
     output$deviceSchedulePerformancePlot <- renderPlot({
       ggplot(tidyDeviceSchedule, aes(x=as.numeric(HourOfDay), y=value, color=Device)) +
         geom_line() +
+        theme_minimal() +
+        theme(legend.position = "top") +
         facet_grid(metric~DayOfWeek, scales = "free_y")
     })
   })
