@@ -19,7 +19,7 @@ ui <- fluidPage(
                                                 actionButton("plotCampaignPerformance", "Plot Data")),
                                    mainPanel(
                                      plotOutput("campaignPerformancePlot", brush = "cpBrush"),
-                                     verbatimTextOutput("cpSelectedPoints"))
+                                     DTOutput("cpSelectedPoints"))
                                  )
                         ),
                         tabPanel("Correlation Plot",
@@ -150,25 +150,28 @@ ui <- fluidPage(
              navbarMenu("Google Analytics",
                         tabPanel("Performance Overview",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotPerformanceOverview", "Plot Data")),
-                                   mainPanel(plotOutput("performanceOverviewPlot"))
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotPerformanceOverview", "Plot Data")),
+                                   mainPanel(plotOutput("performanceOverviewPlot", height = "800px"))
                                  )
                         ),
                         tabPanel("New vs Returning",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotNewVsReturning", "Plot Data")),
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotNewVsReturning", "Plot Data")),
                                    mainPanel(plotOutput("newVsReturningPlot"))
                                  )
                         ),
                         tabPanel("Hostnames",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotHostnames", "Plot Data")),
-                                   mainPanel(tableOutput("hostnamesPlot"))
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotHostnames", "Plot Data")),
+                                   mainPanel(DTOutput("hostnamesPlot"))
                                  )
                         ),
                         tabPanel("Device Categories",
                                  sidebarLayout(
-                                   sidebarPanel(
+                                   sidebarPanel(width = 3,
                                      actionButton("plotGaDeviceCategory", "Plot Data")),
                                    mainPanel(
                                      uiOutput("dateSlider"),
@@ -177,50 +180,58 @@ ui <- fluidPage(
                         ),
                         tabPanel("Channel Performance",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotChannelPerformance", "Plot Data")),
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotChannelPerformance", "Plot Data")),
                                    mainPanel(plotlyOutput("channelPerformancePlot"))
                                  )
                         ),
                         tabPanel("Pages Performance",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotPagePerformance", "Plot Data")),
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotPagePerformance", "Plot Data")),
                                    mainPanel(plotlyOutput("pagePerformancePlot"))
                                  )
                         ),
                         tabPanel("Landing Pages Performance",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotLpPerformance", "Plot Data")),
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotLpPerformance", "Plot Data")),
                                    mainPanel(plotlyOutput("lpPerformancePlot"))
                                  )
                         ),
                         tabPanel("e-Commerce Performance",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotEcomPerformance", "Plot Data")),
-                                   mainPanel(plotOutput("ecomPerformancePlot"))
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotEcomPerformance", "Plot Data")),
+                                   mainPanel(plotOutput("ecomPerformancePlot", height = "600px"))
                                  )
                         ),
                         tabPanel("Session Count",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotSessionCount", "Plot Data")),
-                                   mainPanel(plotOutput("sessionCountPlot"))
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotSessionCount", "Plot Data")),
+                                   mainPanel(plotOutput("sessionCountPlot", height = "500px"))
                                  )
                         ),
                         tabPanel("Days Since Last Session",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotDaysSinceLastSession", "Plot Data")),
-                                   mainPanel(plotOutput("daysSinceLastSessionPlot"))
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotDaysSinceLastSession", "Plot Data")),
+                                   mainPanel(plotOutput("daysSinceLastSessionPlot", height = "500px"))
                                  )
                         ),
                         tabPanel("Session Duration",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotSessionDuration", "Plot Data")),
-                                   mainPanel(plotOutput("sessionDurationPlot"))
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotSessionDuration", "Plot Data")),
+                                   mainPanel(plotOutput("sessionDurationPlot", height = "500px"))
                                  )
                         ),
                         tabPanel("Page Depth",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotPageDepth", "Plot Data")),
-                                   mainPanel(plotOutput("pageDepthPlot"))
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotPageDepth", "Plot Data")),
+                                   mainPanel(plotOutput("pageDepthPlot", height = "500px"))
                                  )
                         ),
                         tabPanel("Correlation Plot",
@@ -245,7 +256,8 @@ ui <- fluidPage(
                         ),
                         tabPanel("Events",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotEventPerformance", "Plot Data")),
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotEventPerformance", "Plot Data")),
                                    mainPanel(
                                      tabsetPanel(
                                        tabPanel("Total Events", plotOutput("totalEventsPlot")),
@@ -255,7 +267,8 @@ ui <- fluidPage(
                         ),
                         tabPanel("Goal Performance",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotGoalPerformance", "Plot Data")),
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotGoalPerformance", "Plot Data")),
                                    mainPanel(
                                      tabsetPanel(
                                        tabPanel("Goal Completions", plotOutput("goalCompletionsPlot")),
@@ -265,8 +278,9 @@ ui <- fluidPage(
                         ),
                         tabPanel("Product Performance",
                                  sidebarLayout(
-                                   sidebarPanel(
-                                     actionButton("plotProductPerformance", "Plot Data"),
+                                   sidebarPanel(width = 3,
+                                     actionButton(
+                                                  "plotProductPerformance", "Plot Data"),
                                      selectInput("sizeMetric", "Dot Size Metric:",
                                                  c("Quantity" = "itemQuantity",
                                                    "Revenue" = "itemRevenue"))),
@@ -274,7 +288,8 @@ ui <- fluidPage(
                                  )
                         ),
                         tabPanel("Anomaly Detector",
-                                 sidebarPanel(actionButton("plotGaAnomalies", "Plot Data")),
+                                 sidebarPanel(width = 3,
+                                              actionButton("plotGaAnomalies", "Plot Data")),
                                  mainPanel(
                                    tabsetPanel(
                                      tabPanel("Acquisition",
@@ -300,7 +315,8 @@ ui <- fluidPage(
                         ),
                         tabPanel("Search Terms",
                                  sidebarLayout(
-                                   sidebarPanel(actionButton("plotSearchTerms", "Plot Data")),
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotSearchTerms", "Plot Data")),
                                    mainPanel(
                                      tabsetPanel(
                                        tabPanel("Unique Searches",

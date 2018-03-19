@@ -40,13 +40,6 @@ server <- function(input, output, session) {
       summarize(Cost = sum(Cost), Conversions = sum(Conversions), CPA = sum(Cost)/sum(Conversions),
                 Clicks = sum(Clicks), ConversionRate = sum(Conversions)/sum(Clicks))
     
-    #    output$campaignPerformancePlot <- renderPlotly({
-    #      plot_ly(data = tidyCampaignPerformance, x = ~ConversionRate, y = ~CPA, size = ~Conversions,
-    #              text = ~paste("Campaign: ", Campaign, "<br>Cost: ", Cost, "<br>Conversions: ",
-    #                            Conversions, "<br>CPA: ", CPA, "<br>ConversionRate", ConversionRate),
-    #              type = "scatter", mode = "markers")
-    #    })
-    
     output$campaignPerformancePlot <- renderPlot({
       ggplot(tidyCampaignPerformance, aes(x = ConversionRate, y = CPA, size = Conversions)) + 
         geom_point(alpha = 0.5, color = "blue") +
@@ -54,8 +47,11 @@ server <- function(input, output, session) {
       
     })
     
-    output$cpSelectedPoints <- renderPrint({
-      brushedPoints(tidyCampaignPerformance, input$cpBrush, xvar = "ConversionRate", yvar = "CPA")
+    output$cpSelectedPoints <- renderDT({
+      datatable(brushedPoints(tidyCampaignPerformance, input$cpBrush, xvar = "ConversionRate", yvar = "CPA"), 
+                options = list(scrollX = T)) %>% 
+        formatCurrency(c("Cost", "CPA")) %>% 
+        formatPercentage(c("ConversionRate"), 2) 
     })
   })
   
@@ -712,6 +708,7 @@ server <- function(input, output, session) {
     output$performanceOverviewPlot <- renderPlot({
       ggplot(longGaPerformanceOverview, aes(x = Date, y = value)) +
         geom_line() +
+        theme_minimal() +
         facet_grid(metric~., scales = "free_y")
     })
   })
@@ -727,6 +724,7 @@ server <- function(input, output, session) {
     output$newVsReturningPlot <- renderPlot({
       ggplot(newVsReturning) +
         geom_area(aes(x = Date, y = Users, fill = userType), position = "stack") +
+        theme_minimal() +
         theme(legend.position = "bottom")
     })
   })
@@ -737,7 +735,7 @@ server <- function(input, output, session) {
                                   dimensions = 'hostname',
                                   anti_sample = TRUE)
     
-    output$hostnamesPlot <- renderTable(hostnames %>% arrange(desc(sessions)))
+    output$hostnamesPlot <- renderDT(hostnames %>% arrange(desc(sessions)))
   })
   
   output$dateSlider <- renderUI({
@@ -771,6 +769,7 @@ server <- function(input, output, session) {
     output$gaDeviceCategoryPlot <- renderPlot({
       ggplot(filteredGaDeviceCategory()) +
         geom_area(aes(x = Date, y = Sessions, fill = deviceCategory), position = "stack") +
+        theme_minimal() +
         theme(legend.position = "bottom")
     })
   })
@@ -828,6 +827,7 @@ server <- function(input, output, session) {
     output$ecomPerformancePlot <- renderPlot({
       ggplot(longEcommerceOverview, aes(x = Date, y = value)) +
         geom_line() +
+        theme_minimal() +
         facet_grid(metric~., scales = "free_y")
     })
   })
@@ -865,6 +865,8 @@ server <- function(input, output, session) {
       ggplot(sessionCountGrouped, aes(x = bucket, y = value, fill = metric)) +
         geom_col(position='dodge') +
         scale_y_continuous(labels=comma) +
+        theme_minimal() +
+        theme(legend.position = "bottom") +
         coord_flip()
     })
   })
@@ -904,6 +906,8 @@ server <- function(input, output, session) {
       ggplot(daysSinceLastSessionGrouped, aes(x = bucket, y = value, fill = metric)) +
         geom_col(position='dodge') +
         scale_y_continuous(labels=comma) +
+        theme_minimal() +
+        theme(legend.position = "bottom") +
         coord_flip()
     })
   })
@@ -936,6 +940,8 @@ server <- function(input, output, session) {
       ggplot(sessionDurationGrouped, aes(x = bucket, y = value, fill = metric)) +
         geom_col(position='dodge') +
         scale_y_continuous(labels=comma) +
+        theme_minimal() +
+        theme(legend.position = "bottom") +
         coord_flip()
     })
   })
@@ -984,6 +990,8 @@ server <- function(input, output, session) {
       ggplot(pageDepthGrouped, aes(x = bucket, y = value, fill = metric)) +
         geom_col(position='dodge') +
         scale_y_continuous(labels=comma) +
+        theme_minimal() +
+        theme(legend.position = "bottom") +
         coord_flip()
     })
   })
@@ -1066,11 +1074,15 @@ server <- function(input, output, session) {
                                          anti_sample = TRUE)
     
     output$totalEventsPlot <- renderPlot({
-      ggplot(eventPerformance, aes(x = date, y = totalEvents, color = eventCategory)) + geom_line()
+      ggplot(eventPerformance, aes(x = date, y = totalEvents, color = eventCategory)) + geom_line() +
+        theme_minimal() +
+        theme(legend.position = "bottom") 
     })
     
     output$sessionsWithEventsPlot <- renderPlot({
-      ggplot(eventPerformance, aes(x = date, y = sessionsWithEvent, color = eventCategory)) + geom_line()
+      ggplot(eventPerformance, aes(x = date, y = sessionsWithEvent, color = eventCategory)) + geom_line() +
+        theme_minimal() +
+        theme(legend.position = "bottom") 
     })
   })
   
@@ -1083,9 +1095,17 @@ server <- function(input, output, session) {
     goalCompletions <- goalPerformance %>% gather(goal, completions, 2:3)
     goalConversionRate <- goalPerformance %>% gather(goal, conversionRates, 4:5)
     
-    output$goalCompletionsPlot <- renderPlot(ggplot(goalCompletions, aes(x = date, y = completions, color = goal)) + geom_line())
+    output$goalCompletionsPlot <- renderPlot({
+      ggplot(goalCompletions, aes(x = date, y = completions, color = goal)) + geom_line() +
+        theme_minimal() +
+        theme(legend.position = "bottom") 
+      })
     
-    output$goalConversionRatesPlot <- renderPlot(ggplot(goalConversionRate, aes(x = date, y = conversionRates, color = goal)) + geom_line())
+    output$goalConversionRatesPlot <- renderPlot({
+      ggplot(goalConversionRate, aes(x = date, y = conversionRates, color = goal)) + geom_line() +
+        theme_minimal() +
+        theme(legend.position = "bottom") 
+      })
   })
   
   observeEvent(input$plotProductPerformance,{
@@ -1204,7 +1224,7 @@ server <- function(input, output, session) {
     df <- read.csv2(input$file1$datapath, header = TRUE, sep = ",") 
     
     output$exampleScatterplot <- renderPlot({
-      p <- ggplot(df, aes(as.numeric(x),as.numeric(y)))
+      p <- ggplot(df, aes(as.numeric(x),as.numeric(y))) + theme_minimal()
       
       p <- p + geom_point()
       
