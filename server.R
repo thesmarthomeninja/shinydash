@@ -1219,6 +1219,20 @@ server <- function(input, output, session) {
     })
   })
   
+  observeEvent(input$plotUniqeParams,{
+    pagesPerformance <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
+                                         metrics = c('pageviews','avgTimeOnPage','pageValue'),
+                                         dimensions = 'pagePath',
+                                         anti_sample = TRUE)
+
+    uniqueParams <- pagesPerformance[str_detect(pagesPerformance$pagePath, "\\?"),]$pagePath %>% 
+      str_replace_all(".*\\?", "") %>% str_split("&") %>% unlist() %>% str_replace_all("=.*", "") %>% unique()
+    
+    output$uniqueParamsPlot <- renderPrint({
+      print(uniqueParams)
+    })
+  })
+  
   observeEvent(input$plotExampleScatterplot,{
     req(input$file1)
     

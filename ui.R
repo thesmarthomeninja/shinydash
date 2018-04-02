@@ -330,6 +330,13 @@ ui <- fluidPage(
                                                 plotOutput("avgSearchDurationRefinement"))
                                      ))
                                  )
+                        ),
+                        tabPanel("Query Parameter Extractor",
+                                 sidebarLayout(
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotUniqeParams", "Extract Parameters")),
+                                   mainPanel(verbatimTextOutput("uniqueParamsPlot"))
+                                 )
                         )
              ),
              navbarMenu("Other",
