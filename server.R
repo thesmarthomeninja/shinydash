@@ -440,23 +440,23 @@ server <- function(input, output, session) {
     qualityScoreAnalysis <- keywordPerformance %>% filter(Date == input$dateRange[2], HasQualityScore == "true")
     
     output$adRelevance <- renderTable({
-      qualityScoreAnalysis %>% group_by(AdRelevance) %>% summarize(n = n()) %>%
-        mutate(freq = n/sum(n)) %>% arrange(desc(n))
+      qualityScoreAnalysis %>% group_by(AdRelevance) %>% summarize(n = n(), cost = sum(Cost)) %>%
+        mutate(perc = n/sum(n), perc_cost = cost/sum(cost)) %>% select(AdRelevance, n, perc, cost, perc_cost) %>% arrange(desc(n))
     })
     
     output$lpExperience <- renderTable({
-      qualityScoreAnalysis %>% group_by(LPExperience) %>% summarize(n = n()) %>%
-        mutate(freq = n/sum(n)) %>% arrange(desc(n))
+      qualityScoreAnalysis %>% group_by(LPExperience) %>% summarize(n = n(), cost = sum(Cost)) %>%
+        mutate(perc = n/sum(n), perc_cost = cost/sum(cost)) %>% select(LPExperience, n, perc, cost, perc_cost) %>% arrange(desc(n))
     })
     
     output$expectedCtr <- renderTable({
-      qualityScoreAnalysis %>% group_by(ExpectedCTR) %>% summarize(n = n()) %>%
-        mutate(freq = n/sum(n)) %>% arrange(desc(n))
+      qualityScoreAnalysis %>% group_by(ExpectedCTR) %>% summarize(n = n(), cost = sum(Cost)) %>%
+        mutate(perc = n/sum(n), perc_cost = cost/sum(cost)) %>% select(ExpectedCTR, n, perc, cost, perc_cost) %>% arrange(desc(n))
     })
     
     output$qualityScore <- renderTable({
-      qualityScoreAnalysis %>% group_by(QS) %>% summarize(n = n()) %>%
-        mutate(freq = n/sum(n)) %>% arrange(desc(n))
+      qualityScoreAnalysis %>% group_by(QS) %>% summarize(n = n(), cost = sum(Cost)) %>%
+        mutate(perc = n/sum(n), perc_cost = cost/sum(cost)) %>% select(QS, n, perc, cost, perc_cost) %>% arrange(desc(as.numeric(QS)))
     })
     
     plotData <- qualityScoreAnalysis %>% mutate(QSImpr = as.numeric(QS) * Impressions) %>% group_by(Campaign, AdGroup) %>%
@@ -467,6 +467,7 @@ server <- function(input, output, session) {
     output$weightedQs <- renderPlotly(plot)
   })
   
+
   observeEvent(input$plotMatchTypes,{
     keywordPerformanceQuery <- statement(select=c("Date","CampaignName","AdGroupName","Criteria","KeywordMatchType",
                                                   "Impressions","Clicks","Cost","Conversions","HasQualityScore",
@@ -1099,13 +1100,13 @@ server <- function(input, output, session) {
       ggplot(goalCompletions, aes(x = date, y = completions, color = goal)) + geom_line() +
         theme_minimal() +
         theme(legend.position = "bottom") 
-      })
+    })
     
     output$goalConversionRatesPlot <- renderPlot({
       ggplot(goalConversionRate, aes(x = date, y = conversionRates, color = goal)) + geom_line() +
         theme_minimal() +
         theme(legend.position = "bottom") 
-      })
+    })
   })
   
   observeEvent(input$plotProductPerformance,{
