@@ -337,6 +337,13 @@ ui <- fluidPage(
                                                 actionButton("plotUniqeParams", "Extract Parameters")),
                                    mainPanel(verbatimTextOutput("uniqueParamsPlot"))
                                  )
+                        ),
+                        tabPanel("Conversion Quality Index",
+                                 sidebarLayout(
+                                   sidebarPanel(width = 3,
+                                                actionButton("plotConversionQualityIndex", "Plot Data")),
+                                   mainPanel(plotlyOutput("conversionQualityIndexPlot", height = "500px"))
+                                 )
                         )
              ),
              navbarMenu("Other",

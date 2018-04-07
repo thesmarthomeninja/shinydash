@@ -1233,6 +1233,25 @@ server <- function(input, output, session) {
     })
   })
   
+  observeEvent(input$plotConversionQualityIndex,{
+    conversionQuality <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
+                                          metrics = c("sessions", "transactions"),
+                                          dimensions = c("date","medium"),
+                                          anti_sample = TRUE)
+    
+    conversionQuality <- conversionQuality %>% 
+      mutate(conversionQualityIndex = ((transactions/sum(transactions))*100)/((sessions/sum(sessions))*100))
+    
+    output$conversionQualityIndexPlot <- renderPlotly({
+      p <- ggplot(conversionQuality, aes(x = date, y = conversionQualityIndex, color = medium)) +
+        geom_line() +
+        theme_minimal()
+      
+      ggplotly(p)
+      
+  })
+})
+  
   observeEvent(input$plotExampleScatterplot,{
     req(input$file1)
     
