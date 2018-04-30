@@ -25,6 +25,7 @@ server <- function(input, output, session) {
     )
   })
   
+  session$onSessionEnded(stopApp)
   
   observeEvent(input$plotCampaignPerformance, {
     campaignPerformanceQuery <- statement(select=c("Date","CampaignName","Conversions","Cost","Clicks"),

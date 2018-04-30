@@ -46,3 +46,4 @@ global.R*
 *.jpg
 .google.auth.RData
 notes\.R
+.google.auth.RData
