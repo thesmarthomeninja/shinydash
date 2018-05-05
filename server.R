@@ -166,22 +166,32 @@ server <- function(input, output, session) {
     
   })
   
+  lastSearchTermPerformanceQuery <- NULL
+  lastSearchTermPerformance <- NULL 
+  
   observeEvent(input$plotSearchTermPerformance,{
     
     lookupWords <- reactive({
       str_replace_all(input$lookupTerms, ",", "|")
     })
     
+    
     searchTermPerformanceQuery <- statement(select=c("Query","MonthOfYear","Clicks","Impressions","Conversions","Cost"),
                                             report="SEARCH_QUERY_PERFORMANCE_REPORT",
                                             start=input$dateRange[1],
                                             end=input$dateRange[2])
     
-    searchTermPerformance <- getData(clientCustomerId=input$adwordsAccountId,
-                                     google_auth=adwordsAccessToken, statement=searchTermPerformanceQuery)
+    if(is.null(lastSearchTermPerformanceQuery) || !identical(lastSearchTermPerformanceQuery, searchTermPerformanceQuery)){
+      
+      searchTermPerformance <- getData(clientCustomerId=input$adwordsAccountId,
+                                       google_auth=adwordsAccessToken, statement=searchTermPerformanceQuery) 
+      
+      lastSearchTermPerformanceQuery <<- searchTermPerformanceQuery
+      lastSearchTermPerformance <<- searchTermPerformance
+    }
     
-    filteredSearchTerms <- searchTermPerformance %>%
-      filter(str_detect(searchTermPerformance$Searchterm, lookupWords())) %>%
+    filteredSearchTerms <- lastSearchTermPerformance %>%
+      filter(str_detect(lastSearchTermPerformance$Searchterm, lookupWords())) %>%
       mutate(Term = str_extract(Searchterm, lookupWords()))
     
     groupedSearchTerms <- filteredSearchTerms %>% group_by(Term) %>% 
@@ -273,7 +283,7 @@ server <- function(input, output, session) {
       searchTermCr()
     })
     
-  })
+  }, autoDestroy = F)
   
   observeEvent(input$plotnGrams,{
     data(stop_words)
