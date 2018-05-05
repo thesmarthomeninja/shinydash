@@ -43,6 +43,24 @@ ui <- fluidPage(
                                      ))
                                  )
                         ),
+                        tabPanel("Search Term Performance Lookup",
+                                 sidebarLayout(
+                                   sidebarPanel(width = 3,
+                                                textInput("lookupTerms", "Enter search terms separated by comma:"),
+                                                actionButton("plotSearchTermPerformance", "Plot Data")),
+                                   mainPanel(
+                                     tabsetPanel(id = "searchTermsTabs",
+                                                 tabPanel("Totals", DTOutput("searchTermTotals")),
+                                                 tabPanel("Impressions", plotOutput("searchTermImpressions")),
+                                                 tabPanel("Clicks", plotOutput("searchTermClicks")),
+                                                 tabPanel("Cost", plotOutput("searchTermCost")),
+                                                 tabPanel("CPC", plotOutput("searchTermCpc")),
+                                                 tabPanel("ConversionRate", plotOutput("searchTermCr")),
+                                                 tabPanel("Conversions", plotOutput("searchTermConversions")),
+                                                 tabPanel("CPA", plotOutput("searchTermCpa"))
+                                     ))
+                                 )
+                        ),
                         tabPanel("N-Grams",
                                  sidebarLayout(
                                    sidebarPanel(width = 3,

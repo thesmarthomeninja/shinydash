@@ -25,8 +25,6 @@ server <- function(input, output, session) {
     )
   })
   
-  session$onSessionEnded(stopApp)
-  
   observeEvent(input$plotCampaignPerformance, {
     campaignPerformanceQuery <- statement(select=c("Date","CampaignName","Conversions","Cost","Clicks"),
                                           report="CAMPAIGN_PERFORMANCE_REPORT",
@@ -165,6 +163,115 @@ server <- function(input, output, session) {
         dev.off()
       }
     )
+    
+  })
+  
+  observeEvent(input$plotSearchTermPerformance,{
+    
+    lookupWords <- reactive({
+      str_replace_all(input$lookupTerms, ",", "|")
+    })
+    
+    searchTermPerformanceQuery <- statement(select=c("Query","MonthOfYear","Clicks","Impressions","Conversions","Cost"),
+                                            report="SEARCH_QUERY_PERFORMANCE_REPORT",
+                                            start=input$dateRange[1],
+                                            end=input$dateRange[2])
+    
+    searchTermPerformance <- getData(clientCustomerId=input$adwordsAccountId,
+                                     google_auth=adwordsAccessToken, statement=searchTermPerformanceQuery)
+    
+    filteredSearchTerms <- searchTermPerformance %>%
+      filter(str_detect(searchTermPerformance$Searchterm, lookupWords())) %>%
+      mutate(Term = str_extract(Searchterm, lookupWords()))
+    
+    groupedSearchTerms <- filteredSearchTerms %>% group_by(Term) %>% 
+      summarise(Clicks = sum(Clicks), Impressions = sum(Impressions), Conversions = sum(Conversions), Cost = sum(Cost)) %>% 
+      mutate(Ctr = Clicks/Impressions, Cpc = Cost/Clicks, Cpa = Cost/Conversions, Cr = Conversions/Clicks)
+    
+    output$searchTermTotals <- renderDT({
+      datatable(groupedSearchTerms, options = list(scrollX = T)) %>% 
+        formatCurrency(c("Cost", "Cpc","Cpa")) %>% 
+        formatPercentage(c("Ctr", "Cr"), 2)
+    })
+    
+    groupedSearchTermsByMonth <- filteredSearchTerms %>% group_by(Term, MonthofYear) %>% summarise(Clicks = sum(Clicks),
+                                                                                                   Impressions = sum(Impressions), Conversions = sum(Conversions), Cost = sum(Cost)) %>% 
+      mutate(Ctr = Clicks/Impressions, Cpc = Cost/Clicks, Cpa = Cost/Conversions, Cr = Conversions/Clicks)
+    
+    groupedSearchTermsByMonth$MonthofYear <- factor(groupedSearchTermsByMonth$MonthofYear, 
+                                                    levels=c("January","February","March","April","May","June","July","August",
+                                                             "September","October","Novemer","December"))
+    
+    
+    searchTermClicks <- reactive({
+      ggplot(groupedSearchTermsByMonth, aes(x = MonthofYear, y = Clicks, fill = Term)) +
+        geom_bar(position = "dodge", stat = "identity") +
+        theme_minimal()
+    })
+    
+    output$searchTermClicks <- renderPlot({
+      searchTermClicks()
+    })
+    
+    searchTermImpressions <- reactive({
+      ggplot(groupedSearchTermsByMonth, aes(x = MonthofYear, y = Impressions, fill = Term)) +
+        geom_bar(position = "dodge", stat = "identity") +
+        theme_minimal()
+    })
+    
+    output$searchTermImpressions <- renderPlot({
+      searchTermImpressions()
+    })
+    
+    searchTermCost <- reactive({
+      ggplot(groupedSearchTermsByMonth, aes(x = MonthofYear, y = Cost, fill = Term)) +
+        geom_bar(position = "dodge", stat = "identity") +
+        theme_minimal()
+    })
+    
+    output$searchTermCost <- renderPlot({
+      searchTermCost()
+    })
+    
+    searchTermCpc <- reactive({
+      ggplot(groupedSearchTermsByMonth, aes(x = MonthofYear, y = Cpc, fill = Term)) +
+        geom_bar(position = "dodge", stat = "identity") +
+        theme_minimal()
+    })
+    
+    output$searchTermCpc <- renderPlot({
+      searchTermCpc()
+    })
+    
+    searchTermConversions <- reactive({
+      ggplot(groupedSearchTermsByMonth, aes(x = MonthofYear, y = Conversions, fill = Term)) +
+        geom_bar(position = "dodge", stat = "identity") +
+        theme_minimal()
+    })
+    
+    output$searchTermConversions <- renderPlot({
+      searchTermConversions()
+    })
+    
+    searchTermCpa <- reactive({
+      ggplot(groupedSearchTermsByMonth, aes(x = MonthofYear, y = Cpa, fill = Term)) +
+        geom_bar(position = "dodge", stat = "identity") +
+        theme_minimal()
+    })
+    
+    output$searchTermCpa <- renderPlot({
+      searchTermCpa()
+    })
+    
+    searchTermCr <- reactive({
+      ggplot(groupedSearchTermsByMonth, aes(x = MonthofYear, y = Cr, fill = Term)) +
+        geom_bar(position = "dodge", stat = "identity") +
+        theme_minimal()
+    })
+    
+    output$searchTermCr <- renderPlot({
+      searchTermCr()
+    })
     
   })
   
