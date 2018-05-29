@@ -114,7 +114,8 @@ ui <- fluidPage(
                                  sidebarLayout(
                                    sidebarPanel(width = 3,
                                                 actionButton("plotAdKeywords", "Plot Data")),
-                                   mainPanel(plotlyOutput("adKeywordsPlot"))
+                                   mainPanel(plotOutput("adKeywordsPlot", brush = "adKeyBrush"),
+                                             DTOutput("selectedKeyword"))
                                  )
                         ),
                         tabPanel("Performance Segments",

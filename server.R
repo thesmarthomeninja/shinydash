@@ -20,7 +20,7 @@ server <- function(input, output, session) {
       authDropdownUI("auth_menu"),
       textInput("adwordsAccountId", "Account ID",
                 placeholder = "XXX-XXX-XXXX",
-                width = "35%"),
+                width = "35%", value = "587-337-7079"),
       dateRangeInput("dateRange","Date Range")
     )
   })
@@ -283,7 +283,7 @@ server <- function(input, output, session) {
       searchTermCr()
     })
     
-  }, autoDestroy = F)
+  })
   
   observeEvent(input$plotnGrams,{
     data(stop_words)
@@ -615,24 +615,43 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$plotAdKeywords,{
-    adPerformanceQuery <- statement(select=c('CampaignName','AdGroupName','Id','Description','HeadlinePart2','CriterionId',
-                                             'Cost','Conversions','CostPerConversion','Clicks'),
+    
+    adPerformanceQuery <- statement(select=c('Id','HeadlinePart1','HeadlinePart2','Description'),
                                     report="AD_PERFORMANCE_REPORT",
-                                    where="Cost > 100000000 AND AdNetworkType1 = SEARCH",
+                                    where = "Clicks > 100",
                                     start=input$dateRange[1],
                                     end=input$dateRange[2])
     
     adPerformance <- getData(clientCustomerId=input$adwordsAccountId, google_auth=adwordsAccessToken, statement=adPerformanceQuery)
-    names(adPerformance) <- c("Campaign", "AdGroup", "AdId", "Description", "Headline2", "KeywordId",
-                              "Cost", "Conversions", "CPA","Clicks")
     
-    adPerformance <- adPerformance %>% mutate(ConversionRate = Conversions/Clicks)
+    names(adPerformance) <- c("AdId", "Headline1", "Headline2", "Description")
     
-    output$adKeywordsPlot <- renderPlotly({
-      plot_ly(data = adPerformance, x = ~ConversionRate, y = ~CPA, size = ~Conversions,
-              text = ~paste("Campaign: ", Campaign, "<br>AdGroup: ", AdGroup, "<br>Headline2: ",
-                            Headline2, "<br>Description: ", Description ,"<br>KeywordId: ", KeywordId))
+    keywordPerformanceQuery <- statement(select=c('Query','CreativeId','Cost','Conversions','Clicks'),
+                                         report="SEARCH_QUERY_PERFORMANCE_REPORT",
+                                         where="Clicks > 9",
+                                         start=input$dateRange[1],
+                                         end=input$dateRange[2])
+    
+    keywordPerformance <- getData(clientCustomerId=input$adwordsAccountId, google_auth=adwordsAccessToken, statement=keywordPerformanceQuery)
+    names(keywordPerformance) <- c("Query","AdId","Cost","Conversions","Clicks")
+    
+    keywordPerformance <- keywordPerformance %>% mutate(ConversionRate = Conversions/Clicks, CPA = Cost/Conversions)
+    
+    mergedPerformance <- inner_join(keywordPerformance, adPerformance, by = "AdId")
+    
+    output$adKeywordsPlot <- renderPlot({
+      ggplot(data = mergedPerformance, aes(x = ConversionRate, y = CPA, size = Conversions)) +
+        geom_point() +
+        theme_minimal()
     })
+    
+    output$selectedKeyword <- renderDT({
+      datatable(brushedPoints(mergedPerformance, input$adKeyBrush, xvar = "ConversionRate", yvar = "CPA"), 
+                options = list(scrollX = T)) %>% 
+        formatCurrency(c("Cost", "CPA")) %>% 
+        formatPercentage(c("ConversionRate"), 2) 
+    })
+    
   })
   
   observeEvent(input$plotPerformanceSegments,{
