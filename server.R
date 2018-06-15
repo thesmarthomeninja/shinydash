@@ -585,7 +585,7 @@ server <- function(input, output, session) {
     output$weightedQs <- renderPlotly(plot)
   })
   
-
+  
   observeEvent(input$plotMatchTypes,{
     keywordPerformanceQuery <- statement(select=c("Date","CampaignName","AdGroupName","Criteria","KeywordMatchType",
                                                   "Impressions","Clicks","Cost","Conversions","HasQualityScore",
@@ -828,6 +828,34 @@ server <- function(input, output, session) {
         theme(legend.position = "top") +
         facet_grid(metric~DayOfWeek, scales = "free_y")
     })
+  })
+  
+  observeEvent(input$plotTypos,{
+    searchTermPerformanceQuery <- statement(select=c("Query","MonthOfYear","Clicks","Impressions","Conversions","Cost"),
+                                            report="SEARCH_QUERY_PERFORMANCE_REPORT",
+                                            start=input$dateRange[1],
+                                            end=input$dateRange[2])
+    
+    if(is.null(lastSearchTermPerformanceQuery) || !identical(lastSearchTermPerformanceQuery, searchTermPerformanceQuery)){
+      
+      searchTermPerformance <- getData(clientCustomerId=input$adwordsAccountId,
+                                       google_auth=adwordsAccessToken, statement=searchTermPerformanceQuery) 
+      
+      lastSearchTermPerformanceQuery <<- searchTermPerformanceQuery
+      lastSearchTermPerformance <<- searchTermPerformance
+      
+    }
+    
+    positions <- aregexec(input$lookupTerm, lastSearchTermPerformance$Searchterm, ignore.case = T)  
+    
+    substrings <- regmatches(lastSearchTermPerformance$Searchterm, positions)
+    
+    notEmpty <- substrings[!sapply(substrings, identical, character(0))]
+    
+    uniqueVariants <- unique(unlist(notEmpty))
+    
+    output$typosPlot <- renderPrint(uniqueVariants)
+    
   })
   
   observeEvent(input$plotPerformanceOverview,{
@@ -1361,7 +1389,7 @@ server <- function(input, output, session) {
                                          metrics = c('pageviews','avgTimeOnPage','pageValue'),
                                          dimensions = 'pagePath',
                                          anti_sample = TRUE)
-
+    
     uniqueParams <- pagesPerformance[str_detect(pagesPerformance$pagePath, "\\?"),]$pagePath %>% 
       str_replace_all(".*\\?", "") %>% str_split("&") %>% unlist() %>% str_replace_all("=.*", "") %>% unique()
     
@@ -1386,8 +1414,8 @@ server <- function(input, output, session) {
       
       ggplotly(p)
       
+    })
   })
-})
   
   observeEvent(input$plotExampleScatterplot,{
     req(input$file1)

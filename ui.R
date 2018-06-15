@@ -165,6 +165,14 @@ ui <- fluidPage(
                                                 actionButton("plotDeviceSchedulePerformance", "Plot Data")),
                                    mainPanel(plotOutput("deviceSchedulePerformancePlot", height = "1200px"))
                                  )
+                        ),
+                        tabPanel("Typo Lookup",
+                                 sidebarLayout(
+                                   sidebarPanel(width = 3,
+                                                textInput("lookupTerm", "Looks for typos of the word:"),
+                                                actionButton("plotTypos", "Plot Data")),
+                                   mainPanel(verbatimTextOutput("typosPlot"))
+                                 )
                         )),
              navbarMenu("Google Analytics",
                         tabPanel("Performance Overview",
