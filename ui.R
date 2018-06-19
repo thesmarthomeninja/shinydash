@@ -47,6 +47,13 @@ ui <- fluidPage(
                                  sidebarLayout(
                                    sidebarPanel(width = 3,
                                                 textInput("lookupTerms", "Enter search terms separated by comma:"),
+                                                selectInput("grabType", "Choose where to grab data from:", 
+                                                            choices = c("API" = "api", "File" = "file")),
+                                                fileInput("file2", "Choose CSV File",
+                                                          multiple = FALSE,
+                                                          accept = c("text/csv",
+                                                                     "text/comma-separated-values,text/plain",
+                                                                     ".csv")),
                                                 actionButton("plotSearchTermPerformance", "Plot Data")),
                                    mainPanel(
                                      tabsetPanel(id = "searchTermsTabs",

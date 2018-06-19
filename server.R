@@ -175,19 +175,26 @@ server <- function(input, output, session) {
       str_replace_all(input$lookupTerms, ",", "|")
     })
     
-    
-    searchTermPerformanceQuery <- statement(select=c("Query","MonthOfYear","Clicks","Impressions","Conversions","Cost"),
-                                            report="SEARCH_QUERY_PERFORMANCE_REPORT",
-                                            start=input$dateRange[1],
-                                            end=input$dateRange[2])
-    
-    if(is.null(lastSearchTermPerformanceQuery) || !identical(lastSearchTermPerformanceQuery, searchTermPerformanceQuery)){
+    if(input$grabType == "api"){
+      searchTermPerformanceQuery <- statement(select=c("Query","MonthOfYear","Clicks","Impressions","Conversions","Cost"),
+                                              report="SEARCH_QUERY_PERFORMANCE_REPORT",
+                                              start=input$dateRange[1],
+                                              end=input$dateRange[2])
       
-      searchTermPerformance <- getData(clientCustomerId=input$adwordsAccountId,
-                                       google_auth=adwordsAccessToken, statement=searchTermPerformanceQuery) 
+      if(is.null(lastSearchTermPerformanceQuery) || !identical(lastSearchTermPerformanceQuery, searchTermPerformanceQuery)){
+        
+        searchTermPerformance <- getData(clientCustomerId=input$adwordsAccountId,
+                                         google_auth=adwordsAccessToken, statement=searchTermPerformanceQuery) 
+        
+        lastSearchTermPerformanceQuery <<- searchTermPerformanceQuery
+        lastSearchTermPerformance <<- searchTermPerformance
+        lastSearchTermPerformanceQuery <<- NULL 
+      }
       
-      lastSearchTermPerformanceQuery <<- searchTermPerformanceQuery
-      lastSearchTermPerformance <<- searchTermPerformance
+    } else {
+      
+      lastSearchTermPerformance <<- read.csv2(input$file2$datapath, header = TRUE, sep = ",") 
+      lastSearchTermPerformance$Cost <<- as.numeric(lastSearchTermPerformance$Cost)
     }
     
     filteredSearchTerms <- lastSearchTermPerformance %>%
