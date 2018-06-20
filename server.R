@@ -715,17 +715,15 @@ server <- function(input, output, session) {
                                    "AveragePosition","RankLostIS","BudgetLostIS","ExactMatchIS")
     
     anomalyData <- accountPerformance %>%
-      mutate(DateTime = ymd_hms(paste0(Date," ",HourOfDay,":00:00")),ImpIS = Impressions * SearchIS,
-             ImpPosition = Impressions * AveragePosition) %>%
-      group_by(DateTime, HourOfDay) %>%
+      mutate(ImpIS = Impressions * SearchIS, ImpPosition = Impressions * AveragePosition) %>%
+      group_by(Date) %>%
       summarise(Clicks = sum(Clicks, na.rm=TRUE), Conversions = sum(Conversions, na.rm=TRUE),
                 CPA = sum(Cost, na.rm=TRUE)/sum(Conversions, na.rm=TRUE),
                 CPC = sum(Cost, na.rm=TRUE)/sum(Clicks, na.rm=TRUE),
                 ImpIS = sum(ImpIS, na.rm=TRUE), ImpPosition = sum(ImpPosition, na.rm=TRUE),
                 Impressions = sum(Impressions, na.rm=TRUE)) %>%
-      mutate(SearchIS = ImpIS / Impressions, Position = ImpPosition / Impressions)
+      mutate(SearchIS = ImpIS / Impressions, Position = ImpPosition / Impressions) %>% arrange(Date)
     
-    anomalyData <- anomalyData %>% arrange(DateTime)
     anomalyData[!is.finite(anomalyData$CPA),"CPA"] <- 0
     anomalyData[is.na(anomalyData$SearchIS),"SearchIS"] <- 0
     anomalyData[is.na(anomalyData$Clicks),"Clicks"] <- 0
@@ -733,29 +731,55 @@ server <- function(input, output, session) {
     anomalyData[is.na(anomalyData$CPC),"CPC"] <- 0
     anomalyData[is.na(anomalyData$Position),"Position"] <- 0
     
-    anomClicks <- AnomalyDetectionTs(anomalyData[,c("DateTime","Clicks")], direction='both',
-                                     plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Clicks")
-    output$clickAnomalies <- renderPlot(anomClicks$plot)
     
-    anomConversions <- AnomalyDetectionTs(anomalyData[,c("DateTime","Conversions")], direction='both',
-                                          plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Conversions")
-    output$conversionAnomalies <- renderPlot(anomConversions$plot)
+    output$clickAnomalies <- renderPlot({
+      anomalyData %>%
+        time_decompose(Clicks, method = "stl", frequency = "auto", trend = "auto") %>%
+        anomalize(remainder, method = "iqr", alpha = 0.05, max_anoms = 0.2) %>%
+        time_recompose() %>%
+        plot_anomalies(time_recomposed = TRUE)
+    })
     
-    anomCPA <- AnomalyDetectionTs(anomalyData[,c("DateTime","CPA")], direction='both',
-                                  plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "CPA")
-    output$cpaAnomalies <- renderPlot(anomCPA$plot)
+    output$conversionAnomalies <- renderPlot({
+      anomalyData %>%
+        time_decompose(Conversions, method = "stl", frequency = "auto", trend = "auto") %>%
+        anomalize(remainder, method = "iqr", alpha = 0.05, max_anoms = 0.2) %>%
+        time_recompose() %>%
+        plot_anomalies(time_recomposed = TRUE)
+    })
     
-    anomCPC <- AnomalyDetectionTs(anomalyData[,c("DateTime","CPC")], direction='both',
-                                  plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "CPC")
-    output$cpcAnomalies <- renderPlot(anomCPC$plot)
+    output$cpaAnomalies <- renderPlot({
+      anomalyData %>%
+        time_decompose(CPA, method = "stl", frequency = "auto", trend = "auto") %>%
+        anomalize(remainder, method = "iqr", alpha = 0.05, max_anoms = 0.2) %>%
+        time_recompose() %>%
+        plot_anomalies(time_recomposed = TRUE)
+    })
     
-    anomSearchIS <- AnomalyDetectionTs(anomalyData[,c("DateTime","SearchIS")], direction='both',
-                                       plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "SearchIS")
-    output$isAnomalies <- renderPlot(anomSearchIS$plot)
+    output$cpcAnomalies <- renderPlot({
+      anomalyData %>%
+        time_decompose(CPC, method = "stl", frequency = "auto", trend = "auto") %>%
+        anomalize(remainder, method = "iqr", alpha = 0.05, max_anoms = 0.2) %>%
+        time_recompose() %>%
+        plot_anomalies(time_recomposed = TRUE)
+    })
     
-    anomPosition <- AnomalyDetectionTs(anomalyData[,c("DateTime","Position")], direction='both',
-                                       plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Position")
-    output$positionAnomalies <- renderPlot(anomPosition$plot)
+    output$isAnomalies <- renderPlot({
+      anomalyData %>%
+        time_decompose(SearchIS, method = "stl", frequency = "auto", trend = "auto") %>%
+        anomalize(remainder, method = "iqr", alpha = 0.05, max_anoms = 0.2) %>%
+        time_recompose() %>%
+        plot_anomalies(time_recomposed = TRUE)
+    })
+    
+    output$positionAnomalies <- renderPlot({
+      anomalyData %>%
+        time_decompose(Position, method = "stl", frequency = "auto", trend = "auto") %>%
+        anomalize(remainder, method = "iqr", alpha = 0.05, max_anoms = 0.2) %>%
+        time_recompose() %>%
+        plot_anomalies(time_recomposed = TRUE)
+    })
+    
   })
   
   observeEvent(input$plotTreemaps,{
@@ -924,20 +948,12 @@ server <- function(input, output, session) {
                                          dimensions = c('date','deviceCategory'),
                                          anti_sample = TRUE)
     
-    #    gaDeviceCategory <- google_analytics("104371403", date_range = c("2018-03-01", "2018-03-15"),
-    #                                         metrics = 'sessions',
-    #                                         dimensions = c('date','deviceCategory'),
-    #                                         anti_sample = TRUE)
-    
     names(gaDeviceCategory) <- c('Date','deviceCategory','Sessions')
     
     filteredGaDeviceCategory <- reactive({
       gaDeviceCategory %>% 
         filter(Date >= input$dateRangeSlider[1] & Date <= input$dateRangeSlider[2])
     })
-    
-    #    filteredGaDeviceCategory <- gaDeviceCategory %>% 
-    #      filter(Date >= "2018-03-07" & Date <= "2018-03-15")
     
     output$gaDeviceCategoryPlot <- renderPlot({
       ggplot(filteredGaDeviceCategory()) +
@@ -1298,52 +1314,91 @@ server <- function(input, output, session) {
     anomalyGaData <- google_analytics(selectedId(), date_range = c(input$dateRange[1],input$dateRange[2]),
                                       metrics = c('sessions','pageviews','users','transactions', 'bounceRate','avgSessionDuration',
                                                   'pageviewsPerSession','transactionsPerSession','revenuePerTransaction', 'transactionRevenue'),
-                                      dimensions = 'dateHour',
+                                      dimensions = 'date',
                                       anti_sample = TRUE)
     
-    anomalyGaData <- anomalyGaData %>% mutate(DateHour = ymd_hms(paste0(anomalyGaData$dateHour,"0000")))
+    anomalyGaData <- anomalyGaData %>% arrange(date) %>% tbl_df()
     
-    anomalyGaData <- anomalyGaData %>% arrange(DateHour)
+    output$sessionAnomalies <- renderPlot({
+      anomalyGaData %>%
+        time_decompose(sessions, method = "stl", frequency = "auto", trend = "auto") %>%
+        anomalize(remainder, method = "iqr", alpha = 0.05, max_anoms = 0.2) %>%
+        time_recompose() %>%
+        plot_anomalies(time_recomposed = TRUE)
+    })
     
-    anomSessions <- AnomalyDetectionTs(anomalyGaData[,c("DateHour","sessions")], direction='both',
-                                       plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Sessions")
-    output$sessionAnomalies <- renderPlot(anomSessions$plot)
+    output$pageviewAnomalies <- renderPlot({
+      anomalyGaData %>%
+        time_decompose(pageviews, method = "stl", frequency = "auto", trend = "auto") %>%
+        anomalize(remainder, method = "iqr", alpha = 0.05, max_anoms = 0.2) %>%
+        time_recompose() %>%
+        plot_anomalies(time_recomposed = TRUE)
+    })
     
-    anomPageviews <- AnomalyDetectionTs(anomalyGaData[,c("DateHour","pageviews")], direction='both',
-                                        plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Pageviews")
-    output$pageviewAnomalies <- renderPlot(anomPageviews$plot)
+    output$userAnomalies <- renderPlot({
+      anomalyGaData %>%
+        time_decompose(users, method = "stl", frequency = "auto", trend = "auto") %>%
+        anomalize(remainder, method = "iqr", alpha = 0.05, max_anoms = 0.2) %>%
+        time_recompose() %>%
+        plot_anomalies(time_recomposed = TRUE)
+    })
     
-    anomUsers <- AnomalyDetectionTs(anomalyGaData[,c("DateHour","users")], direction='both',
-                                    plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Users")
-    output$userAnomalies <- renderPlot(anomUsers$plot)
+    output$bounceRateAnomalies <- renderPlot({
+      anomalyGaData %>%
+        time_decompose(bounceRate, method = "stl", frequency = "auto", trend = "auto") %>%
+        anomalize(remainder, method = "iqr", alpha = 0.05, max_anoms = 0.2) %>%
+        time_recompose() %>%
+        plot_anomalies(time_recomposed = TRUE)
+    })
     
-    anomBounceRate <- AnomalyDetectionTs(anomalyGaData[,c("DateHour","bounceRate")], direction='both',
-                                         plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Bounce Rate")
-    output$bounceRateAnomalies <- renderPlot(anomBounceRate$plot)
+    output$avgSessionDurationAnomalies <- renderPlot({
+      anomalyGaData %>%
+        time_decompose(avgSessionDuration, method = "stl", frequency = "auto", trend = "auto") %>%
+        anomalize(remainder, method = "iqr", alpha = 0.05, max_anoms = 0.2) %>%
+        time_recompose() %>%
+        plot_anomalies(time_recomposed = TRUE)
+    })
     
-    anomAvgSessionDuration <- AnomalyDetectionTs(anomalyGaData[,c("DateHour","avgSessionDuration")], direction='both',
-                                                 plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Avg Session Duration")
-    output$avgSessionDurationAnomalies <- renderPlot(anomAvgSessionDuration$plot)
+    output$pagesPerSessionAnomalies <- renderPlot({
+      anomalyGaData %>%
+        time_decompose(pageviewsPerSession, method = "stl", frequency = "auto", trend = "auto") %>%
+        anomalize(remainder, method = "iqr", alpha = 0.05, max_anoms = 0.2) %>%
+        time_recompose() %>%
+        plot_anomalies(time_recomposed = TRUE)
+    })
     
-    anomPagesPerSession <- AnomalyDetectionTs(anomalyGaData[,c("DateHour","pageviewsPerSession")], direction='both',
-                                              plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Pages Per Session")
-    output$pagesPerSessionAnomalies <- renderPlot(anomPagesPerSession$plot)
+    output$transactionAnomalies <- renderPlot({
+      anomalyGaData %>%
+        time_decompose(transactions, method = "stl", frequency = "auto", trend = "auto") %>%
+        anomalize(remainder, method = "iqr", alpha = 0.05, max_anoms = 0.2) %>%
+        time_recompose() %>%
+        plot_anomalies(time_recomposed = TRUE)
+    })
     
-    anomTransactions <- AnomalyDetectionTs(anomalyGaData[,c("DateHour","transactions")], direction='both',
-                                           plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Transactions")
-    output$transactionAnomalies <- renderPlot(anomTransactions$plot)
+    output$ecomConversionRateAnomalies <- renderPlot({
+      anomalyGaData %>%
+        time_decompose(transactionsPerSession, method = "stl", frequency = "auto", trend = "auto") %>%
+        anomalize(remainder, method = "iqr", alpha = 0.05, max_anoms = 0.2) %>%
+        time_recompose() %>%
+        plot_anomalies(time_recomposed = TRUE)
+    })
     
-    anomEcomConversionRate <- AnomalyDetectionTs(anomalyGaData[,c("DateHour","transactionsPerSession")], direction='both',
-                                                 plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Conversion Rate")
-    output$ecomConversionRateAnomalies <- renderPlot(anomEcomConversionRate$plot)
+    output$revenueAnomalies <- renderPlot({
+      anomalyGaData %>%
+        time_decompose(transactionRevenue, method = "stl", frequency = "auto", trend = "auto") %>%
+        anomalize(remainder, method = "iqr", alpha = 0.05, max_anoms = 0.2) %>%
+        time_recompose() %>%
+        plot_anomalies(time_recomposed = TRUE)
+    })
     
-    anomRevenue <- AnomalyDetectionTs(anomalyGaData[,c("DateHour","transactionRevenue")], direction='both',
-                                      plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "Revenue")
-    output$revenueAnomalies <- renderPlot(anomRevenue$plot)
+    output$avgOrderValueAnomalies <- renderPlot({
+      anomalyGaData %>%
+        time_decompose(revenuePerTransaction, method = "stl", frequency = "auto", trend = "auto") %>%
+        anomalize(remainder, method = "iqr", alpha = 0.05, max_anoms = 0.2) %>%
+        time_recompose() %>%
+        plot_anomalies(time_recomposed = TRUE)
+    })
     
-    anomAvgOrderValue <- AnomalyDetectionTs(anomalyGaData[,c("DateHour","revenuePerTransaction")], direction='both',
-                                            plot=TRUE, e_value=TRUE, max_anoms=0.01, ylabel = "AOV")
-    output$avgOrderValueAnomalies <- renderPlot(anomAvgOrderValue$plot)
   })
   
   observeEvent(input$plotSearchTerms,{
